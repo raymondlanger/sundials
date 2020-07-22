@@ -21,6 +21,7 @@
 # Examples using SUNDIALS linear solvers
 SET(CVODE_examples
   "cvAdvDiff_bnd\;develop"
+  "cvAdvDiff_bnd_UpdJac\;develop"
   "cvDirectDemo_ls\;develop"
   "cvDiurnal_kry_bp\;develop"
   "cvDiurnal_kry\;develop"
