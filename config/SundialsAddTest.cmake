@@ -25,15 +25,28 @@
 # ---------------------------------------------------------------
 
 IF(EXAMPLES_ENABLED)
-
-  find_package(PythonInterp)
-  IF(${PYTHON_VERSION_MAJOR} LESS 3)
-    IF(${PYTHON_VERSION_MINOR} LESS 7)
+  IF (${CMAKE_VERSION} VERSION_GREATER 3.12.0)
+    message(STATUS "New cmake version ${CMAKE_VERSION}")
+    find_package(Python2 REQUIRED)
+    IF(${Python2_VERSION_MINOR} LESS 7)
       PRINT_WARNING("Python version must be 2.7.x or greater to run regression tests"
                     "Examples will build but 'make test' will fail.")
     ENDIF()
-  ENDIF()
-
+    if(Python2_EXECUTABLE)
+      set(PYTHON_EXECUTABLE "${Python2_EXECUTABLE}")
+    endif()
+  ELSE (${CMAKE_VERSION} VERSION_GREATER 3.12.0)
+    message(STATUS "Old cmake version ${CMAKE_VERSION}")
+    find_package(PythonInterp REQUIRED)
+    IF(${PYTHON_VERSION_MAJOR} LESS 3)
+      IF(${PYTHON_VERSION_MINOR} LESS 7)
+        PRINT_WARNING("Python version must be 2.7.x or greater to run regression tests"
+                      "Examples will build but 'make test' will fail.")
+      endif()
+    else()
+      message(STATUS "Found python 3; sundials testRunner might not work")
+    ENDIF()
+  ENDIF (${CMAKE_VERSION} VERSION_GREATER 3.12.0)
   # look for the testRunner script in the test directory
   FIND_PROGRAM(TESTRUNNER testRunner PATHS test)
 
@@ -131,7 +144,7 @@ MACRO(SUNDIALS_ADD_TEST NAME EXECUTABLE)
   # create test case with the corresponding test runner command and arguments
   # all tests are added during development and only unlabeled tests when released
   IF(${SUNDIALS_DEVTESTS} OR "${SUNDIALS_ADD_TEST_EXAMPLE_TYPE}" STREQUAL "")
-    ADD_TEST(NAME ${NAME} COMMAND ${PYTHON_EXECUTABLE} ${TESTRUNNER} ${TEST_ARGS})
+    ADD_TEST(NAME SUNDIALS_${NAME} COMMAND ${PYTHON_EXECUTABLE} ${TESTRUNNER} ${TEST_ARGS})
   ENDIF()
 
 ENDMACRO()
