@@ -750,7 +750,10 @@ int CVSpilsDQJtimes(N_Vector v, N_Vector Jv, realtype t,
     N_VLinearSum(sig, v, ONE, y, work);
 
     /* Set Jv = f(tn, y+sig*v) */
-    retval = cv_mem->cv_f(t, work, Jv, cv_mem->cv_user_data); 
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(t, work, Jv, cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(t, work, Jv, cv_mem->cv_user_data);
     cvspils_mem->nfes++;
     if (retval == 0) break;
     if (retval < 0)  return(-1);

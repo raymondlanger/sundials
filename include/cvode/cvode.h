@@ -158,6 +158,20 @@ extern "C" {
 
 typedef int (*CVRhsFn)(realtype t, N_Vector y,
 		       N_Vector ydot, void *user_data);
+/*
+ * -----------------------------------------------------------------
+ * If CVRhsFnUpdateJac is set CVode provides an additional 
+ * boolean argument to the used implementation. If it is true, 
+ * a Jacobian will be computed after the computation of f.
+ * This additional information can be used to improve the 
+ * efficiency of the subsequent Jacobian computation.
+ * All other properties of the function f still apply 
+ * as described above. If CVRhsFnUpdateJac is not set, existing 
+ * implementations of CVRhsFn can be used without chance.
+ * -----------------------------------------------------------------
+ */
+typedef int (*CVRhsFnUpdateJac)(realtype t, N_Vector y,
+		       N_Vector ydot, void *user_data, booleantype jac_info);
 
 /*
  * -----------------------------------------------------------------
@@ -412,6 +426,7 @@ SUNDIALS_EXPORT int CVodeSetNoInactiveRootWarn(void *cvode_mem);
  */
 
 SUNDIALS_EXPORT int CVodeInit(void *cvode_mem, CVRhsFn f, realtype t0, N_Vector y0);
+SUNDIALS_EXPORT int CVodeInitUpdateJac(void *cvode_mem, CVRhsFnUpdateJac f, realtype t0, N_Vector y0);
 
 /*
  * -----------------------------------------------------------------

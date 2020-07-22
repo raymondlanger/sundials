@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "cvode_impl.h"
+#include "cvode_direct_impl.h"
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
 
@@ -358,6 +359,7 @@ void *CVodeCreate(int lmm, int iter)
 
   /* Set default values for integrator optional inputs */
   cv_mem->cv_f          = NULL;
+  cv_mem->cv_f_upd_j    = NULL;
   cv_mem->cv_user_data  = NULL;
   cv_mem->cv_itol       = CV_NN;
   cv_mem->cv_user_efun  = SUNFALSE;
@@ -412,6 +414,18 @@ void *CVodeCreate(int lmm, int iter)
 
 /*-----------------------------------------------------------------*/
 
+int CVodeInitUpdateJac(void *cvode_mem, CVRhsFnUpdateJac f, realtype t0, N_Vector y0){
+  CVodeMem cv_mem;
+  cv_mem = (CVodeMem) cvode_mem;
+  if (f == NULL) {
+    cvProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeInitUpdateJac", MSGCV_NULL_F);
+    return(CV_ILL_INPUT);
+  }
+  cv_mem->cv_f_upd_j  = f;
+  cv_mem->cv_f  = NULL;
+  return CVodeInit(cvode_mem, NULL, t0, y0);
+}
+
 /*
  * CVodeInit
  * 
@@ -443,7 +457,7 @@ int CVodeInit(void *cvode_mem, CVRhsFn f, realtype t0, N_Vector y0)
     return(CV_ILL_INPUT);
   }
 
-  if (f == NULL) {
+  if (f == NULL && cv_mem->cv_f_upd_j == NULL) {
     cvProcessError(cv_mem, CV_ILL_INPUT, "CVODE", "CVodeInit", MSGCV_NULL_F);
     return(CV_ILL_INPUT);
   }
@@ -1018,9 +1032,12 @@ int CVode(void *cvode_mem, realtype tout, N_Vector yout,
     /* Call f at (t0,y0), set zn[1] = y'(t0), 
        set initial h (from H0 or cvHin), and scale zn[1] by h.
        Also check for zeros of root function g at and near t0.    */
-    
-    retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
-                          cv_mem->cv_zn[1], cv_mem->cv_user_data); 
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                            cv_mem->cv_zn[1], cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                            cv_mem->cv_zn[1], cv_mem->cv_user_data);
     cv_mem->cv_nfe++;
     if (retval < 0) {
       cvProcessError(cv_mem, CV_RHSFUNC_FAIL, "CVODE", "CVode",
@@ -1866,8 +1883,12 @@ static int cvYddNorm(CVodeMem cv_mem, realtype hg, realtype *yddnrm)
   int retval;
 
   N_VLinearSum(hg, cv_mem->cv_zn[1], ONE, cv_mem->cv_zn[0], cv_mem->cv_y);
-  retval = cv_mem->cv_f(cv_mem->cv_tn+hg, cv_mem->cv_y,
-                        cv_mem->cv_tempv, cv_mem->cv_user_data);
+  if(cv_mem->cv_f_upd_j)
+    retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn+hg, cv_mem->cv_y,
+                          cv_mem->cv_tempv, cv_mem->cv_user_data, SUNFALSE);
+  else
+    retval = cv_mem->cv_f(cv_mem->cv_tn+hg, cv_mem->cv_y,
+                          cv_mem->cv_tempv, cv_mem->cv_user_data);
   cv_mem->cv_nfe++;
   if (retval < 0) return(CV_RHSFUNC_FAIL);
   if (retval > 0) return(RHSFUNC_RECVR);
@@ -2489,9 +2510,12 @@ static int cvNlsFunctional(CVodeMem cv_mem)
   
   cv_mem->cv_crate = ONE;
   m = 0;
-
-  retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
-                        cv_mem->cv_tempv, cv_mem->cv_user_data);
+  if(cv_mem->cv_f_upd_j)
+    retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                          cv_mem->cv_tempv, cv_mem->cv_user_data, SUNFALSE);
+  else
+    retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                          cv_mem->cv_tempv, cv_mem->cv_user_data);
   cv_mem->cv_nfe++;
   if (retval < 0) return(CV_RHSFUNC_FAIL);
   if (retval > 0) return(RHSFUNC_RECVR);
@@ -2534,9 +2558,12 @@ static int cvNlsFunctional(CVodeMem cv_mem)
 
     /* Save norm of correction, evaluate f, and loop again */
     delp = del;
-
-    retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_y,
-                          cv_mem->cv_tempv, cv_mem->cv_user_data);
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, cv_mem->cv_y,
+                            cv_mem->cv_tempv, cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_y,
+                            cv_mem->cv_tempv, cv_mem->cv_user_data);
     cv_mem->cv_nfe++;
     if (retval < 0) return(CV_RHSFUNC_FAIL);
     if (retval > 0) return(RHSFUNC_RECVR);
@@ -2593,11 +2620,21 @@ static int cvNlsNewton(CVodeMem cv_mem, int nflag)
      Evaluate f at the predicted y, call lsetup if indicated, and
      call cvNewtonIteration for the Newton iteration itself.      */
   
-
   for(;;) {
 
-    retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
-                          cv_mem->cv_ftemp, cv_mem->cv_user_data);
+    CVDlsMem cvdls_mem = (CVDlsMem) cv_mem->cv_lmem;
+    double dgamma = SUNRabs((cv_mem->cv_gamma/cv_mem->cv_gammap) - ONE);
+    booleantype jbad = callSetup && ((cv_mem->cv_nst == 0) || 
+          (cv_mem->cv_nst > cvdls_mem->nstlj + CVD_MSBJ) ||
+          ((convfail == CV_FAIL_BAD_J) && (dgamma < CVD_DGMAX)) ||
+          (convfail == CV_FAIL_OTHER));
+    
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                            cv_mem->cv_ftemp, cv_mem->cv_user_data, jbad);
+    else
+      retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                            cv_mem->cv_ftemp, cv_mem->cv_user_data);
     cv_mem->cv_nfe++; 
     if (retval < 0) return(CV_RHSFUNC_FAIL);
     if (retval > 0) return(RHSFUNC_RECVR);
@@ -2716,8 +2753,12 @@ static int cvNewtonIteration(CVodeMem cv_mem)
     
     /* Save norm of correction, evaluate f, and loop again */
     delp = del;
-    retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_y,
-                          cv_mem->cv_ftemp, cv_mem->cv_user_data);
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, cv_mem->cv_y,
+                            cv_mem->cv_ftemp, cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_y,
+                            cv_mem->cv_ftemp, cv_mem->cv_user_data);
     cv_mem->cv_nfe++;
     if (retval < 0) return(CV_RHSFUNC_FAIL);
     if (retval > 0) {
@@ -2899,9 +2940,13 @@ static booleantype cvDoErrorTest(CVodeMem cv_mem, int *nflagPtr,
   cv_mem->cv_hscale = cv_mem->cv_h;
   cv_mem->cv_qwait = LONG_WAIT;
   cv_mem->cv_nscon = 0;
-
-  retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
-                        cv_mem->cv_tempv, cv_mem->cv_user_data);
+  
+  if(cv_mem->cv_f_upd_j)
+    retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                          cv_mem->cv_tempv, cv_mem->cv_user_data, SUNFALSE);
+  else
+    retval = cv_mem->cv_f(cv_mem->cv_tn, cv_mem->cv_zn[0],
+                          cv_mem->cv_tempv, cv_mem->cv_user_data);
   cv_mem->cv_nfe++;
   if (retval < 0)  return(CV_RHSFUNC_FAIL);
   if (retval > 0)  return(CV_UNREC_RHSFUNC_ERR);

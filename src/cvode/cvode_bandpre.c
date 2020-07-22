@@ -520,7 +520,10 @@ static int CVBandPDQJac(CVBandPrecData pdata, realtype t, N_Vector y,
     }
 
     /* Evaluate f with incremented y. */
-    retval = cv_mem->cv_f(t, ytemp, ftemp, cv_mem->cv_user_data);
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(t, ytemp, ftemp, cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(t, ytemp, ftemp, cv_mem->cv_user_data);
     pdata->nfeBP++;
     if (retval != 0) return(retval);
 

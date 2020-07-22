@@ -457,8 +457,10 @@ int cvDlsDenseDQJac(realtype t, N_Vector y, N_Vector fy,
     yjsaved = y_data[j];
     inc = SUNMAX(srur*SUNRabs(yjsaved), minInc/ewt_data[j]);
     y_data[j] += inc;
-
-    retval = cv_mem->cv_f(t, y, ftemp, cv_mem->cv_user_data);
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(t, y, ftemp, cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(t, y, ftemp, cv_mem->cv_user_data);
     cvdls_mem->nfeDQ++;
     if (retval != 0) break;
     
@@ -542,7 +544,10 @@ int cvDlsBandDQJac(realtype t, N_Vector y, N_Vector fy, SUNMatrix Jac,
     }
 
     /* Evaluate f with incremented y */
-    retval = cv_mem->cv_f(cv_mem->cv_tn, ytemp, ftemp, cv_mem->cv_user_data);
+    if(cv_mem->cv_f_upd_j)
+      retval = cv_mem->cv_f_upd_j(cv_mem->cv_tn, ytemp, ftemp, cv_mem->cv_user_data, SUNFALSE);
+    else
+      retval = cv_mem->cv_f(cv_mem->cv_tn, ytemp, ftemp, cv_mem->cv_user_data);
     cvdls_mem->nfeDQ++;
     if (retval != 0) break;
 

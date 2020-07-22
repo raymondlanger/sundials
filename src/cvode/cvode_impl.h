@@ -69,6 +69,7 @@ typedef struct CVodeMemRec {
     --------------------------*/
 
   CVRhsFn cv_f;              /* y' = f(t,y(t))                                */
+CVRhsFnUpdateJac cv_f_upd_j; /* y' = f(t,y(t))                                */
   void *cv_user_data;        /* user pointer passed to f                      */
   int cv_lmm;                /* lmm = CV_ADAMS or CV_BDF                      */
   int cv_iter;               /* iter = CV_FUNCTIONAL or CV_NEWTON             */

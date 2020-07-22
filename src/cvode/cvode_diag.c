@@ -46,6 +46,7 @@ static int CVDiagFree(CVodeMem cv_mem);
 #define lrw1      (cv_mem->cv_lrw1)
 #define liw1      (cv_mem->cv_liw1)
 #define f         (cv_mem->cv_f)
+#define f_upd_j   (cv_mem->cv_f_upd_j)
 #define uround    (cv_mem->cv_uround)
 #define tn        (cv_mem->cv_tn)
 #define h         (cv_mem->cv_h)
@@ -335,7 +336,10 @@ static int CVDiagSetup(CVodeMem cv_mem, int convfail, N_Vector ypred,
   N_VLinearSum(r, ftemp, ONE, ypred, y);
 
   /* Evaluate f at perturbed y */
-  retval = f(tn, y, M, cv_mem->cv_user_data);
+  if(f_upd_j)
+    retval = f_upd_j(tn, y, M, cv_mem->cv_user_data, SUNFALSE);
+  else
+    retval = f(tn, y, M, cv_mem->cv_user_data);
   nfeDI++;
   if (retval < 0) {
     cvProcessError(cv_mem, CVDIAG_RHSFUNC_UNRECVR, "CVDIAG", "CVDiagSetup", MSGDG_RHSFUNC_FAILED);
