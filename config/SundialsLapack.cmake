@@ -15,6 +15,9 @@
 
 SET(LAPACK_FOUND FALSE)
 
+if(ORK_INTEGRATION)
+  find_package(LAPACK REQUIRED)
+else()
 # If LAPACK libraries are undefined, try to find them (if we have
 # a working Fortran compiler) or look for them in the most
 # obvious place...
@@ -34,6 +37,7 @@ if(NOT LAPACK_LIBRARIES)
     SET(DOCSTR "Lapack library")
     FORCE_VARIABLE(TPL_LAPACK_LIBRARIES STRING "${DOCSTR}" "${LAPACK_LIBRARIES}")
   endif()
+endif()
 endif()
 
 # If we have the LAPACK libraries, test them

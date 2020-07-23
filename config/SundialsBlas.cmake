@@ -20,6 +20,9 @@ SET(BLAS_FOUND FALSE)
 # If BLAS libraries are undefined, try to find them (if we have
 # a working Fortran compiler) or look for them in the most
 # obvious place...
+if(ORK_INTEGRATION)
+  find_package(BLAS REQUIRED)
+else()
 if(NOT BLAS_LIBRARIES)
   if(F77_FOUND)
     include(FindBLAS)
@@ -36,6 +39,7 @@ if(NOT BLAS_LIBRARIES)
     SET(DOCSTR "Blas library")
     FORCE_VARIABLE(TPL_BLAS_LIBRARIES STRING "${DOCSTR}" "${BLAS_LIBRARIES}")
   endif()
+endif()
 endif()
 
 # If we have the BLAS libraries, test them

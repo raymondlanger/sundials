@@ -328,7 +328,11 @@ OPTION(MPI_ENABLE "Enable MPI support" OFF)
 # ---------------------------------------------------------------
 # Enable OpenMP support?
 # ---------------------------------------------------------------
+if(OPENMP_FOUND)
+  OPTION(OPENMP_ENABLE "Enable OpenMP support" ON)
+else()
 OPTION(OPENMP_ENABLE "Enable OpenMP support" OFF)
+endif()
 
 # ---------------------------------------------------------------
 # Enable Pthread support?
@@ -884,6 +888,8 @@ if(RAJA_ENABLE)
   endif()
 endif(RAJA_ENABLE)
 
+OPTION(ORK_INTEGRATION "Improved CMake setup" TRUE)
+
 # ===============================================================
 # Find (and test) external packages
 # ===============================================================
@@ -904,8 +910,9 @@ IF(BLAS_ENABLE)
   SHOW_VARIABLE(BLAS_LIBRARIES STRING "Blas libraries" "${BLAS_LIBRARIES}")
 
   IF(BLAS_LIBRARIES AND NOT BLAS_FOUND)
-    PRINT_WARNING("BLAS not functional"
-                  "BLAS support will not be provided")
+    MESSAGE(FATAL_ERROR "BLAS not functional\n"
+                  "BLAS support will not be provided\n"
+                  "Try a different blas implementation (-DBLA_VENDOR=...)")
   ELSE()
     #set sundials_config.h symbol via sundials_config.in
     SET(SUNDIALS_BLAS TRUE)
@@ -937,8 +944,9 @@ IF(LAPACK_ENABLE)
   SHOW_VARIABLE(LAPACK_LIBRARIES STRING "Lapack and Blas libraries" "${LAPACK_LIBRARIES}")
 
   IF(LAPACK_LIBRARIES AND NOT LAPACK_FOUND)
-    PRINT_WARNING("LAPACK not functional"
-                  "Blas/Lapack support will not be provided")
+    MESSAGE(FATAL_ERROR "LAPACK not functional\n"
+                  "Blas/Lapack support will not be provided\n"
+                  "Try a different blas implementation (-DBLA_VENDOR=...)")
   ELSE()
     #set sundials_config.h symbol via sundials_config.in
     SET(SUNDIALS_BLAS_LAPACK TRUE)
