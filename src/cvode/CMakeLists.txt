@@ -82,7 +82,6 @@ ADD_PREFIX(${sundials_SOURCE_DIR}/include/cvode/ cvode_HEADERS)
 # Add source directories to include directories for access to
 # implementation only header files.
 INCLUDE_DIRECTORIES(.)
-INCLUDE_DIRECTORIES(../sundials)
 
 # Define C preprocessor flag -DBUILD_SUNDIALS_LIBRARY 
 ADD_DEFINITIONS(-DBUILD_SUNDIALS_LIBRARY)
@@ -96,7 +95,10 @@ IF(BUILD_STATIC_LIBS)
 
   target_include_directories(sundials_cvode_static 
     PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/lib/sundials-3.1.0/include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/sundials>
+    $<INSTALL_INTERFACE:include/cvode> 
+    PRIVATE 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     )
   # Set the library name and make sure it is not deleted
   SET_TARGET_PROPERTIES(sundials_cvode_static
@@ -116,7 +118,10 @@ IF(BUILD_SHARED_LIBS)
   
   target_include_directories(sundials_cvode_shared 
     PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/lib/sundials-3.1.0/include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/sundials/include>
+    $<INSTALL_INTERFACE:include/cvode> 
+    PRIVATE 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     )
   IF(UNIX)
     TARGET_LINK_LIBRARIES(sundials_cvode_shared m)

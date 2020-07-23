@@ -48,6 +48,11 @@ IF(BUILD_STATIC_LIBS)
   ADD_LIBRARY(sundials_sunlinsollapackband_static STATIC ${sunlinsollapackband_SOURCES} ${shared_SOURCES})
   SET_TARGET_PROPERTIES(sundials_sunlinsollapackband_static
     PROPERTIES OUTPUT_NAME sundials_sunlinsollapackband CLEAN_DIRECT_OUTPUT 1)
+  target_include_directories(sundials_sunlinsollapackband_static
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:lib> 
+  )
   INSTALL(TARGETS sundials_sunlinsollapackband_static DESTINATION lib)
 ENDIF(BUILD_STATIC_LIBS)
 
@@ -66,6 +71,11 @@ IF(BUILD_SHARED_LIBS)
 
   SET_TARGET_PROPERTIES(sundials_sunlinsollapackband_shared
     PROPERTIES OUTPUT_NAME sundials_sunlinsollapackband CLEAN_DIRECT_OUTPUT 1)
+  target_include_directories(sundials_sunlinsollapackband_shared
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:lib> 
+  )
   SET_TARGET_PROPERTIES(sundials_sunlinsollapackband_shared
     PROPERTIES VERSION ${sunlinsollib_VERSION} SOVERSION ${sunlinsollib_SOVERSION})
   INSTALL(TARGETS sundials_sunlinsollapackband_shared DESTINATION lib)
