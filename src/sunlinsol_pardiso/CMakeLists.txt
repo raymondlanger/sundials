@@ -36,6 +36,7 @@ IF(BUILD_STATIC_LIBS)
   )
   SET_TARGET_PROPERTIES(sundials_sunlinsolpardiso_static
     PROPERTIES OUTPUT_NAME sundials_sunlinsolpardiso CLEAN_DIRECT_OUTPUT 1)
+  add_library(sundials::sundials_sunlinsolpardiso_static ALIAS sundials_sunlinsolpardiso_static)
   INSTALL(TARGETS sundials_sunlinsolpardiso_static DESTINATION lib)
 ENDIF(BUILD_STATIC_LIBS)
 
@@ -60,6 +61,8 @@ IF(BUILD_SHARED_LIBS)
     PROPERTIES OUTPUT_NAME sundials_sunlinsolpardiso CLEAN_DIRECT_OUTPUT 1)
   SET_TARGET_PROPERTIES(sundials_sunlinsolpardiso_shared
     PROPERTIES VERSION ${sunlinsollib_VERSION} SOVERSION ${sunlinsollib_SOVERSION})
+
+  add_library(sundials::sundials_sunlinsolpardiso_shared ALIAS sundials_sunlinsolpardiso_shared)
   INSTALL(TARGETS sundials_sunlinsolpardiso_shared DESTINATION lib)
 ENDIF(BUILD_SHARED_LIBS)
 

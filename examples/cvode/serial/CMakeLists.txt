@@ -198,9 +198,9 @@ if(PARDISO_FOUND)
   # Specify libraries to link against (through the target that was used to 
   # generate them) based on the value of the variable LINK_LIBRARY_TYPE
   IF(LINK_LIBRARY_TYPE MATCHES "static")
-    SET(SUNLINSOL_LIB sundials_sunlinsolpardiso_static)
+    SET(SUNLINSOL_LIB sundials::sundials_sunlinsolpardiso_static)
   ELSE()
-    SET(SUNLINSOL_LIB sundials_sunlinsolpardiso_shared)
+    SET(SUNLINSOL_LIB sundials::sundials_sunlinsolpardiso_shared)
   ENDIF()
   
   FOREACH(example_tuple ${CVODE_examples_PARDISO})
@@ -221,7 +221,7 @@ if(PARDISO_FOUND)
       EXAMPLE_TYPE ${example_type})
 
     # libraries to link against
-    TARGET_LINK_LIBRARIES(${example} ${SUNDIALS_LIBS} ${SUNLINSOL_LIB})
+    TARGET_LINK_LIBRARIES(${example} PUBLIC ${SUNDIALS_LIBS} ${SUNLINSOL_LIB})
 
     # install example source and out files
     IF(EXAMPLES_INSTALL)
