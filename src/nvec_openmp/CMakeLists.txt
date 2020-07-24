@@ -48,6 +48,9 @@ ENDIF(OPENMP_FOUND)
 #  - Install the NVECOPENMP library
 IF(BUILD_STATIC_LIBS)
   ADD_LIBRARY(sundials_nvecopenmp_static STATIC ${nvecopenmp_SOURCES} ${shared_SOURCES})
+  if(TARGET OpenMP::OpenMP_C)
+    target_link_libraries(sundials_nvecopenmp_static PUBLIC OpenMP::OpenMP_C)
+  endif()
   SET_TARGET_PROPERTIES(sundials_nvecopenmp_static
     PROPERTIES OUTPUT_NAME sundials_nvecopenmp CLEAN_DIRECT_OUTPUT 1)
   INSTALL(TARGETS sundials_nvecopenmp_static DESTINATION lib)
@@ -60,9 +63,11 @@ ENDIF(BUILD_STATIC_LIBS)
 #  - Install the NVECOPENMP library
 IF(BUILD_SHARED_LIBS)
   ADD_LIBRARY(sundials_nvecopenmp_shared SHARED ${nvecopenmp_SOURCES} ${shared_SOURCES})
-
+  if(TARGET OpenMP::OpenMP_C)
+    target_link_libraries(sundials_nvecopenmp_shared PUBLIC OpenMP::OpenMP_C)
+  endif()
   IF(UNIX)
-    TARGET_LINK_LIBRARIES(sundials_nvecopenmp_shared m)
+    TARGET_LINK_LIBRARIES(sundials_nvecopenmp_shared PUBLIC m)
   ENDIF()
 
   SET_TARGET_PROPERTIES(sundials_nvecopenmp_shared
@@ -90,7 +95,7 @@ IF(FCMIX_ENABLE AND F77_FOUND)
     ADD_LIBRARY(sundials_fnvecopenmp_shared ${fnvecopenmp_SOURCES})
     
     # fnvecopenmp depends on nvecopenmp
-    TARGET_LINK_LIBRARIES(sundials_fnvecopenmp_shared sundials_nvecopenmp_shared)
+    TARGET_LINK_LIBRARIES(sundials_fnvecopenmp_shared PUBLIC sundials_nvecopenmp_shared)
 
     SET_TARGET_PROPERTIES(sundials_fnvecopenmp_shared
       PROPERTIES OUTPUT_NAME sundials_fnvecopenmp CLEAN_DIRECT_OUTPUT 1)

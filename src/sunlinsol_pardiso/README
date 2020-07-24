@@ -1,0 +1,36 @@
+                     SUNLINSOL_PARDISO
+                 not released as part of SUNDIALS
+    SUite of Nonlinear and DIfferential/ALgebraic equation Solvers
+                   Release 3.1.0, March 2018
+
+
+PARDISO implementation of the SUNLINSOL module for SUNDIALS. 
+
+SUNLINSOL_PARDISO defines the content field of SUNMatrix to be a structure 
+containing X, along with a long integer for any error flag that arises in
+the factorization process.
+
+SUNLINSOL_PARDISO defines N macros to provide access to the content of 
+a PARDISO SUNLinearSolver, and constructor for the PARDISO SUNLinearSolver
+interface, in addition to implementation of all linear solver
+operations defined by the generic SUNLINSOL module in the table 
+of operations.
+
+
+A. Documentation
+----------------
+
+The PARDISO SUNLINSOL implementation is not described anywhere. 
+
+
+B. Installation
+---------------
+
+Installation instructions do not exist.
+
+
+D. Releases
+-----------
+v. 1.0   - 03/24/2018
+
+

@@ -80,6 +80,13 @@
  */
 #cmakedefine SUNDIALS_KLU
 
+/* PARDISO available
+ * If working libraries for PARDISO support were found, then
+ *     #define SUNDIALS_PARDISO 
+ */
+#cmakedefine SUNDIALS_PARDISO
+#cmakedefine MKL_PARDISO
+
 /* FNVECTOR: Allow user to specify different MPI communicator
  * If it was found that the MPI implementation supports MPI_Comm_f2c, then
  *      #define SUNDIALS_MPI_COMM_F2C 1

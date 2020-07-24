@@ -19,7 +19,7 @@
 # ---------------------------------------------------------------
 
 # Require a fairly recent cmake version
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
 
 # Set CMake policy to allow examples to build
 if(COMMAND cmake_policy)
@@ -364,6 +364,7 @@ OPTION(BLAS_ENABLE "Enable BLAS support" OFF)
 # ---------------------------------------------------------------
 OPTION(LAPACK_ENABLE "Enable Lapack support" OFF)
 
+OPTION(PARDISO_ENABLE "Enable pardiso support" OFF)
 # LAPACK does not support extended precision
 IF(LAPACK_ENABLE AND SUNDIALS_PRECISION MATCHES "EXTENDED")
   PRINT_WARNING("LAPACK is not compatible with ${SUNDIALS_PRECISION} precision"
@@ -888,7 +889,26 @@ if(RAJA_ENABLE)
   endif()
 endif(RAJA_ENABLE)
 
-OPTION(ORK_INTEGRATION "Improved CMake setup" TRUE)
+OPTION(ORK_INTEGRATION "Improved CMake setup" ON)
+OPTION(SEQ_LAPACK "Use a sequential lapack implementation. Explicitly specifying the BLA_VENDOR overrides this option." OFF)
+
+if(PARDISO_ENABLE)
+  OPTION(MKL_PARDISO "Using PARDISO library from intel MKL" OFF)
+  if(MKL_PARDISO)
+    message(STATUS "Using MKL provided PARDISO")
+    IF(BLA_VENDOR MATCHES "Intel")
+      MESSAGE(STATUS "Use user-specified BLA_VENDOR=${BLA_VENDOR}")
+    else()
+      if(SEQ_LAPACK)
+        set(BLA_VENDOR "Intel10_64lp_seq")
+      else()
+        set(BLA_VENDOR "Intel10_64lp")
+      endif()
+    endif()
+  else()
+    message(STATUS "Using stand-alone PARDISO")
+  endif()
+endif(PARDISO_ENABLE)
 
 # ===============================================================
 # Find (and test) external packages
@@ -1036,6 +1056,24 @@ ELSE()
 
 ENDIF(KLU_ENABLE)
 
+
+# ---------------------------------------------------------------
+# Find (and test) the PARDISO library
+# ---------------------------------------------------------------
+
+#SHOW_VARIABLE(PARDISO_LIBRARY_DIR PATH
+#  "Pardiso library directory" "${PARDISO_LIBRARY_DIR}")
+if(PARDISO_ENABLE)
+  # This is different from the other linear solvers:
+  # PARDISO_ENABLE=ON enforces a working pardiso library
+  INCLUDE(SundialsPARDISO)
+  IF(NOT PARDISO_FOUND)
+    message(FATAL_ERROR "PARDISO not functional - support cannot be provided")
+  ENDIF()
+  # sundials_config.h symbol
+  SET(SUNDIALS_PARDISO TRUE)
+ENDIF(PARDISO_ENABLE)
+
 # ---------------------------------------------------------------
 # Find (and test) the hypre libraries
 # ---------------------------------------------------------------
@@ -1142,6 +1180,9 @@ ADD_SUBDIRECTORY(src/sunlinsol_dense)
 IF(KLU_FOUND)
   ADD_SUBDIRECTORY(src/sunlinsol_klu)
 ENDIF(KLU_FOUND)
+IF(PARDISO_FOUND)
+  ADD_SUBDIRECTORY(src/sunlinsol_pardiso)
+ENDIF(PARDISO_FOUND)
 IF(SUPERLUMT_FOUND)
   ADD_SUBDIRECTORY(src/sunlinsol_superlumt)
 ENDIF(SUPERLUMT_FOUND)
@@ -1561,6 +1602,9 @@ IF(EXAMPLES_ENABLED)
   IF(KLU_FOUND)
     ADD_SUBDIRECTORY(examples/sunlinsol/klu)
   ENDIF(KLU_FOUND)
+  IF(PARDISO_FOUND)
+    ADD_SUBDIRECTORY(examples/sunlinsol/pardiso)
+  ENDIF(PARDISO_FOUND)
   IF(SUPERLUMT_FOUND)
     ADD_SUBDIRECTORY(examples/sunlinsol/superlumt)
   ENDIF(SUPERLUMT_FOUND)

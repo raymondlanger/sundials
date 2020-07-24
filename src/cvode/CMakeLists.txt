@@ -91,12 +91,12 @@ IF(BUILD_STATIC_LIBS)
 
   # Add the build target for the static CVODE library
   ADD_LIBRARY(sundials_cvode_static STATIC 
-    ${cvode_SOURCES} ${shared_SOURCES} ${sunmatrix_SOURCES} ${sunlinsol_SOURCES})
+    ${cvode_HEADERS} ${cvode_SOURCES} ${shared_SOURCES} ${sunmatrix_SOURCES} ${sunlinsol_SOURCES})
 
   target_include_directories(sundials_cvode_static 
     PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/sundials>
-    $<INSTALL_INTERFACE:include/cvode> 
+    $<INSTALL_INTERFACE:include> 
     PRIVATE 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     )
@@ -114,12 +114,12 @@ IF(BUILD_SHARED_LIBS)
 
   # Add the build target for the CVODE library
   ADD_LIBRARY(sundials_cvode_shared SHARED 
-    ${cvode_SOURCES} ${shared_SOURCES} ${sunmatrix_SOURCES} ${sunlinsol_SOURCES})
+    ${cvode_HEADERS} ${cvode_SOURCES} ${shared_SOURCES} ${sunmatrix_SOURCES} ${sunlinsol_SOURCES})
   
   target_include_directories(sundials_cvode_shared 
     PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/sundials/include>
-    $<INSTALL_INTERFACE:include/cvode> 
+    $<INSTALL_INTERFACE:include> 
     PRIVATE 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     )

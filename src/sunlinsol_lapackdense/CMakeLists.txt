@@ -49,7 +49,8 @@ IF(BUILD_STATIC_LIBS)
   target_include_directories(sundials_sunlinsollapackdense_static
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include/sunlinsol> 
+    $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include> 
   )
   INSTALL(TARGETS sundials_sunlinsollapackdense_static DESTINATION lib)
 ENDIF(BUILD_STATIC_LIBS)
@@ -64,7 +65,8 @@ IF(BUILD_SHARED_LIBS)
   target_include_directories(sundials_sunlinsollapackdense_shared
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include/sunlinsol> 
+    $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include> 
   )
 
   # sunlinsollapackdense depends on sunmatrixdense and LAPACK
