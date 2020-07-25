@@ -63,7 +63,8 @@ int main(int argc, char *argv[])
   b = N_VNew_Serial(N);
 
   /* Fill matrix with uniform random data in [0,1/N] */
-  for (int k=0; k<5*N; k++) {
+  int k =0;
+  for (k=0; k<5*N; k++) {
     int i = rand() % N;
     int j = rand() % N;
     matdata = SUNDenseMatrix_Column(B,j);
@@ -79,7 +80,8 @@ int main(int argc, char *argv[])
 
   /* Fill x vector with uniform random data in [0,1] */
   xdata = N_VGetArrayPointer(x);
-  for (int i=0; i<N; i++)
+  int i;
+  for (i=0; i<N; i++)
    xdata[i] = (realtype) rand() / (realtype) RAND_MAX;
 
   /* Create sparse matrix from dense, and destroy B */

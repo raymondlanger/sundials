@@ -21,7 +21,8 @@ SET(BLAS_FOUND FALSE)
 # a working Fortran compiler) or look for them in the most
 # obvious place...
 if(ORK_INTEGRATION)
-  find_package(BLAS REQUIRED)
+  include(utilities)
+  find_blas_lapack_mkl_preferred("${BLA_VENDOR}" "${INTEL_MKL_DIR}" "${SEQ_LAPACK}" "sundials")
 else()
 if(NOT BLAS_LIBRARIES)
   if(F77_FOUND)
@@ -54,6 +55,9 @@ if(BLAS_LIBRARIES)
   file(WRITE ${BlasTest_DIR}/CMakeLists.txt
     "CMAKE_MINIMUM_REQUIRED(VERSION 2.4)\n"
     "PROJECT(ltest C)\n"
+    "if(COMMAND cmake_policy)\n"
+    "  cmake_policy(SET CMP0003 NEW)\n"
+    "endif(COMMAND cmake_policy)\n"
     "SET(CMAKE_VERBOSE_MAKEFILE ON)\n"
     "SET(CMAKE_BUILD_TYPE \"${CMAKE_BUILD_TYPE}\")\n"
     "SET(CMAKE_C_FLAGS \"${CMAKE_C_FLAGS}\")\n"

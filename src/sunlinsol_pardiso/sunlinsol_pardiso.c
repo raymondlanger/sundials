@@ -66,6 +66,7 @@ SUNLinearSolver SUNPARDISO(N_Vector y, SUNMatrix A) {
   SUNLinearSolverContent_PARDISO content;
   sunindextype MatrixRows, VecLength;
   int flag;
+  int i = 0;
 
   /* Check compatibility with supplied SUNMatrix and N_Vector */
   if (SUNMatGetID(A) != SUNMATRIX_SPARSE) {
@@ -133,7 +134,7 @@ SUNLinearSolver SUNPARDISO(N_Vector y, SUNMatrix A) {
   /* -------------------------------------------------------------------- */
   /* .. Setup Pardiso control parameters. */
   /* -------------------------------------------------------------------- */
-  for (int i = 0; i < 64; ++i) IPARM(S)[i] = 0;
+  for (i = 0; i < 64; ++i) IPARM(S)[i] = 0;
   IPARM(S)[0] = 1;  /* No solver default */
   IPARM(S)[1] = 2;  /* Fill-in reordering from METIS */
   IPARM(S)[3] = 0;  /* No iterative-direct algorithm */
@@ -172,7 +173,7 @@ SUNLinearSolver SUNPARDISO(N_Vector y, SUNMatrix A) {
   MTYPE(S) = 11;
 
 #ifdef MKL_PARDISO
-  for (int i = 0; i < 64; ++i)
+  for (i = 0; i < 64; ++i)
         PT(S)[i] = 0;
   //PARDISOINIT(PT(S), &MTYPE(S), IPARM(S));
 #else
@@ -325,10 +326,11 @@ int SUNLinSolSetup_PARDISO(SUNLinearSolver S, SUNMatrix A) {
   /*     Use this functionality only for debugging purposes               */
   /* -------------------------------------------------------------------- */
   if (SUNSparseMatrix_IndexValues(A)[0] == 0) {
-    for (int i = 0; i < SM_NNZ_S(A); ++i) {
+    int i;
+    for (i = 0; i < SM_NNZ_S(A); ++i) {
       ++SUNSparseMatrix_IndexValues(A)[i];
     }
-    for (int i = 0; i < SUNSparseMatrix_NP(A) + 1; ++i) {
+    for (i = 0; i < SUNSparseMatrix_NP(A) + 1; ++i) {
       ++SUNSparseMatrix_IndexPointers(A)[i];
     }
   }

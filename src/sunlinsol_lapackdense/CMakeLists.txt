@@ -52,6 +52,23 @@ IF(BUILD_STATIC_LIBS)
     $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include> 
   )
+  if(INTEL_MKL_DIR OR MKL_INCLUDE_DIR)
+    if(EXISTS "${MKL_INCLUDE_DIR}")
+      target_include_directories(
+        sundials_sunlinsollapackdense_static
+        PUBLIC "$<INSTALL_INTERFACE:${MKL_INCLUDE_DIR}>"
+        PUBLIC "$<BUILD_INTERFACE:${MKL_INCLUDE_DIR}>")
+    endif()
+  endif()
+  # sunlinsollapackdense depends on sunmatrixdense and LAPACK
+  TARGET_LINK_LIBRARIES(sundials_sunlinsollapackdense_static
+    sundials_sunmatrixdense_static
+    ${LAPACK_LIBRARIES})
+  
+  # if a blas library was provided, assume LAPACK depends on it
+  IF(BLAS_FOUND)
+    TARGET_LINK_LIBRARIES(sundials_sunlinsollapackdense_static ${BLAS_LIBRARIES})
+  ENDIF()
   INSTALL(TARGETS sundials_sunlinsollapackdense_static DESTINATION lib)
 ENDIF(BUILD_STATIC_LIBS)
 
@@ -68,6 +85,14 @@ IF(BUILD_SHARED_LIBS)
     $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include> 
   )
+  if(INTEL_MKL_DIR OR MKL_INCLUDE_DIR)
+    if(EXISTS "${MKL_INCLUDE_DIR}")
+      target_include_directories(
+        sundials_sunlinsollapackdense_shared
+        PUBLIC "$<INSTALL_INTERFACE:${MKL_INCLUDE_DIR}>"
+        PUBLIC "$<BUILD_INTERFACE:${MKL_INCLUDE_DIR}>")
+    endif()
+  endif()
 
   # sunlinsollapackdense depends on sunmatrixdense and LAPACK
   TARGET_LINK_LIBRARIES(sundials_sunlinsollapackdense_shared

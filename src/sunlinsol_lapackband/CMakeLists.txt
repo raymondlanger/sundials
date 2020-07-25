@@ -54,6 +54,14 @@ IF(BUILD_STATIC_LIBS)
     $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include> 
   )
+  if(INTEL_MKL_DIR OR MKL_INCLUDE_DIR)
+    if(EXISTS "${MKL_INCLUDE_DIR}")
+      target_include_directories(
+        sundials_sunlinsollapackband_static
+        INTERFACE "$<INSTALL_INTERFACE:${MKL_INCLUDE_DIR}>"
+        INTERFACE "$<BUILD_INTERFACE:${MKL_INCLUDE_DIR}>")
+    endif()
+  endif()
   INSTALL(TARGETS sundials_sunlinsollapackband_static DESTINATION lib)
 ENDIF(BUILD_STATIC_LIBS)
 
@@ -69,6 +77,15 @@ IF(BUILD_SHARED_LIBS)
   TARGET_LINK_LIBRARIES(sundials_sunlinsollapackband_shared
     sundials_sunmatrixband_shared
     ${LAPACK_LIBRARIES})
+  if(INTEL_MKL_DIR OR MKL_INCLUDE_DIR)
+    if(EXISTS "${MKL_INCLUDE_DIR}")
+      target_include_directories(
+        sundials_sunlinsollapackband_shared
+        INTERFACE "$<INSTALL_INTERFACE:${MKL_INCLUDE_DIR}>"
+        INTERFACE "$<BUILD_INTERFACE:${MKL_INCLUDE_DIR}>")
+    endif()
+  endif()
+
 
   SET_TARGET_PROPERTIES(sundials_sunlinsollapackband_shared
     PROPERTIES OUTPUT_NAME sundials_sunlinsollapackband CLEAN_DIRECT_OUTPUT 1)
