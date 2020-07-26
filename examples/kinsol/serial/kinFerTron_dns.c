@@ -46,10 +46,8 @@
 #include <kinsol/kinsol.h>             /* access to KINSOL func., consts. */
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector       */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix       */
-#include <kinsol/kinsol_direct.h>      /* access to KINDls interface      */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype */
-#include <sundials/sundials_math.h>    /* access to SUNRexp               */
 
 /* Problem Constants */
 
@@ -75,7 +73,7 @@ typedef struct {
 } *UserData;
 
 /* Accessor macro */
-#define Ith(v,i)    NV_Ith_S(v,i-1)   
+#define Ith(v,i)    NV_Ith_S(v,i-1)
 
 /* Functions Called by the KINSOL Solver */
 static int func(N_Vector u, N_Vector f, void *user_data);
@@ -137,7 +135,7 @@ int main()
   SetInitialGuess1(u1,data);
   SetInitialGuess2(u2,data);
 
-  N_VConst_Serial(ONE,s); /* no scaling */
+  N_VConst(ONE,s); /* no scaling */
 
   Ith(c,1) =  ZERO;   /* no constraint on x1 */
   Ith(c,2) =  ZERO;   /* no constraint on x2 */
@@ -145,7 +143,7 @@ int main()
   Ith(c,4) = -ONE;    /* L1 = x1 - x1_max <= 0 */
   Ith(c,5) =  ONE;    /* l2 = x2 - x2_min >= 0 */
   Ith(c,6) = -ONE;    /* L2 = x2 - x22_min <= 0 */
-  
+
   fnormtol=FTOL; scsteptol=STOL;
 
 
@@ -169,12 +167,12 @@ int main()
   if(check_flag((void *)J, "SUNDenseMatrix", 0)) return(1);
 
   /* Create dense SUNLinearSolver object */
-  LS = SUNDenseLinearSolver(u, J);
-  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+  LS = SUNLinSol_Dense(u, J);
+  if(check_flag((void *)LS, "SUNLinSol_Dense", 0)) return(1);
 
   /* Attach the matrix and linear solver to KINSOL */
-  flag = KINDlsSetLinearSolver(kmem, LS, J);
-  if(check_flag(&flag, "KINDlsSetLinearSolver", 1)) return(1);
+  flag = KINSetLinearSolver(kmem, LS, J);
+  if(check_flag(&flag, "KINSetLinearSolver", 1)) return(1);
 
   /* Print out the problem size, solution parameters, initial guess. */
   PrintHeader(fnormtol, scsteptol);
@@ -186,28 +184,28 @@ int main()
   printf("  [x1,x2] = ");
   PrintOutput(u1);
 
-  N_VScale_Serial(ONE,u1,u);
+  N_VScale(ONE,u1,u);
   glstr = KIN_NONE;
   mset = 1;
   SolveIt(kmem, u, s, glstr, mset);
 
   /* --------------------------- */
 
-  N_VScale_Serial(ONE,u1,u);
+  N_VScale(ONE,u1,u);
   glstr = KIN_LINESEARCH;
   mset = 1;
   SolveIt(kmem, u, s, glstr, mset);
 
   /* --------------------------- */
 
-  N_VScale_Serial(ONE,u1,u);
+  N_VScale(ONE,u1,u);
   glstr = KIN_NONE;
   mset = 0;
   SolveIt(kmem, u, s, glstr, mset);
 
   /* --------------------------- */
 
-  N_VScale_Serial(ONE,u1,u);
+  N_VScale(ONE,u1,u);
   glstr = KIN_LINESEARCH;
   mset = 0;
   SolveIt(kmem, u, s, glstr, mset);
@@ -221,28 +219,28 @@ int main()
   printf("  [x1,x2] = ");
   PrintOutput(u2);
 
-  N_VScale_Serial(ONE,u2,u);
+  N_VScale(ONE,u2,u);
   glstr = KIN_NONE;
   mset = 1;
   SolveIt(kmem, u, s, glstr, mset);
 
   /* --------------------------- */
 
-  N_VScale_Serial(ONE,u2,u);
+  N_VScale(ONE,u2,u);
   glstr = KIN_LINESEARCH;
   mset = 1;
   SolveIt(kmem, u, s, glstr, mset);
 
   /* --------------------------- */
 
-  N_VScale_Serial(ONE,u2,u);
+  N_VScale(ONE,u2,u);
   glstr = KIN_NONE;
   mset = 0;
   SolveIt(kmem, u, s, glstr, mset);
 
   /* --------------------------- */
 
-  N_VScale_Serial(ONE,u2,u);
+  N_VScale(ONE,u2,u);
   glstr = KIN_LINESEARCH;
   mset = 0;
   SolveIt(kmem, u, s, glstr, mset);
@@ -252,9 +250,11 @@ int main()
 
   /* Free memory */
 
-  N_VDestroy_Serial(u);
-  N_VDestroy_Serial(s);
-  N_VDestroy_Serial(c);
+  N_VDestroy(u1);
+  N_VDestroy(u2);
+  N_VDestroy(u);
+  N_VDestroy(s);
+  N_VDestroy(c);
   KINFree(&kmem);
   SUNLinSolFree(LS);
   SUNMatDestroy(J);
@@ -302,8 +302,8 @@ static int SolveIt(void *kmem, N_Vector u, N_Vector s, int glstr, int mset)
  *--------------------------------------------------------------------
  */
 
-/* 
- * System function for predator-prey system 
+/*
+ * System function for predator-prey system
  */
 
 static int func(N_Vector u, N_Vector f, void *user_data)
@@ -312,13 +312,13 @@ static int func(N_Vector u, N_Vector f, void *user_data)
   realtype x1, l1, L1, x2, l2, L2;
   realtype *lb, *ub;
   UserData data;
-  
+
   data = (UserData)user_data;
   lb = data->lb;
   ub = data->ub;
 
-  udata = N_VGetArrayPointer_Serial(u);
-  fdata = N_VGetArrayPointer_Serial(f);
+  udata = N_VGetArrayPointer(u);
+  fdata = N_VGetArrayPointer(f);
 
   x1 = udata[0];
   x2 = udata[1];
@@ -328,7 +328,7 @@ static int func(N_Vector u, N_Vector f, void *user_data)
   L2 = udata[5];
 
   fdata[0] = PT5 * sin(x1*x2) - PT25 * x2 / PI - PT5 * x1;
-  fdata[1] = (ONE - PT25/PI)*(SUNRexp(TWO*x1)-E) + E*x2/PI - TWO*E*x1;
+  fdata[1] = (ONE - PT25/PI)*(exp(TWO*x1)-E) + E*x2/PI - TWO*E*x1;
   fdata[2] = l1 - x1 + lb[0];
   fdata[3] = L1 - x1 + ub[0];
   fdata[4] = l2 - x2 + lb[1];
@@ -353,7 +353,7 @@ static void SetInitialGuess1(N_Vector u, UserData data)
   realtype *udata;
   realtype *lb, *ub;
 
-  udata = N_VGetArrayPointer_Serial(u);
+  udata = N_VGetArrayPointer(u);
 
   lb = data->lb;
   ub = data->ub;
@@ -378,7 +378,7 @@ static void SetInitialGuess2(N_Vector u, UserData data)
   realtype *udata;
   realtype *lb, *ub;
 
-  udata = N_VGetArrayPointer_Serial(u);
+  udata = N_VGetArrayPointer(u);
 
   lb = data->lb;
   ub = data->ub;
@@ -397,7 +397,7 @@ static void SetInitialGuess2(N_Vector u, UserData data)
   udata[5] = x2 - ub[1];
 }
 
-/* 
+/*
  * Print first lines of output (problem description)
  */
 
@@ -405,7 +405,7 @@ static void PrintHeader(realtype fnormtol, realtype scsteptol)
 {
   printf("\nFerraris and Tronconi test problem\n");
   printf("Tolerance parameters:\n");
-#if defined(SUNDIALS_EXTENDED_PRECISION) 
+#if defined(SUNDIALS_EXTENDED_PRECISION)
   printf("  fnormtol  = %10.6Lg\n  scsteptol = %10.6Lg\n",
          fnormtol, scsteptol);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
@@ -417,7 +417,7 @@ static void PrintHeader(realtype fnormtol, realtype scsteptol)
 #endif
 }
 
-/* 
+/*
  * Print solution
  */
 
@@ -432,24 +432,24 @@ static void PrintOutput(N_Vector u)
 #endif
 }
 
-/* 
- * Print final statistics contained in iopt 
+/*
+ * Print final statistics contained in iopt
  */
 
 static void PrintFinalStats(void *kmem)
 {
   long int nni, nfe, nje, nfeD;
   int flag;
-  
+
   flag = KINGetNumNonlinSolvIters(kmem, &nni);
   check_flag(&flag, "KINGetNumNonlinSolvIters", 1);
   flag = KINGetNumFuncEvals(kmem, &nfe);
   check_flag(&flag, "KINGetNumFuncEvals", 1);
 
-  flag = KINDlsGetNumJacEvals(kmem, &nje);
-  check_flag(&flag, "KINDlsGetNumJacEvals", 1);
-  flag = KINDlsGetNumFuncEvals(kmem, &nfeD);
-  check_flag(&flag, "KINDlsGetNumFuncEvals", 1);
+  flag = KINGetNumJacEvals(kmem, &nje);
+  check_flag(&flag, "KINGetNumJacEvals", 1);
+  flag = KINGetNumLinFuncEvals(kmem, &nfeD);
+  check_flag(&flag, "KINGetNumLinFuncEvals", 1);
 
   printf("Final Statistics:\n");
   printf("  nni = %5ld    nfe  = %5ld \n", nni, nfe);
@@ -463,7 +463,7 @@ static void PrintFinalStats(void *kmem)
  *    opt == 1 means SUNDIALS function returns a flag so check if
  *             flag >= 0
  *    opt == 2 means function allocates memory so check if returned
- *             NULL pointer 
+ *             NULL pointer
  */
 
 static int check_flag(void *flagvalue, const char *funcname, int opt)
@@ -472,7 +472,7 @@ static int check_flag(void *flagvalue, const char *funcname, int opt)
 
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
   if (opt == 0 && flagvalue == NULL) {
-    fprintf(stderr, 
+    fprintf(stderr,
             "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
 	    funcname);
     return(1);
@@ -485,7 +485,7 @@ static int check_flag(void *flagvalue, const char *funcname, int opt)
       fprintf(stderr,
               "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
 	      funcname, *errflag);
-      return(1); 
+      return(1);
     }
   }
 

@@ -1,42 +1,37 @@
 # ---------------------------------------------------------------
-# Programmer:  Radu Serban @ LLNL
+# Programmer(s): Radu Serban @ LLNL
 # ---------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department 
-# of Energy by Lawrence Livermore National Laboratory in part under 
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2020, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # BLAS/LAPACK tests for SUNDIALS CMake-based configuration.
+# ---------------------------------------------------------------
 
-SET(LAPACK_FOUND FALSE)
+set(LAPACK_FOUND FALSE)
 
 if(ORK_INTEGRATION)
   include(utilities)
   find_blas_lapack_mkl_preferred("${BLA_VENDOR}" "${INTEL_MKL_DIR}" "${SEQ_LAPACK}" "sundials")
+  # If the xSDK flag is used, set it to what was found
+  if(LAPACK_LIBRARIES AND TPL_ENABLE_LAPACK)
+    set(DOCSTR "Lapack library")
+    force_variable(TPL_LAPACK_LIBRARIES STRING "${DOCSTR}" "${LAPACK_LIBRARIES}")
+  endif()
 else()
-# If LAPACK libraries are undefined, try to find them (if we have
-# a working Fortran compiler) or look for them in the most
-# obvious place...
 if(NOT LAPACK_LIBRARIES)
-  if(F77_FOUND)
-    include(FindLAPACK)
-  else(F77_FOUND)
-    find_library(LAPACK_LIBRARIES
-      NAMES lapack
-      PATHS /usr/lib /usr/local/lib
-      "$ENV{ProgramFiles}/LAPACK/Lib"
-      )
-  endif(F77_FOUND)
+  find_package(LAPACK REQUIRED)
 
   # If the xSDK flag is used, set it to what was found
   if(LAPACK_LIBRARIES AND TPL_ENABLE_LAPACK)
-    SET(DOCSTR "Lapack library")
-    FORCE_VARIABLE(TPL_LAPACK_LIBRARIES STRING "${DOCSTR}" "${LAPACK_LIBRARIES}")
+    set(DOCSTR "Lapack library")
+    force_variable(TPL_LAPACK_LIBRARIES STRING "${DOCSTR}" "${LAPACK_LIBRARIES}")
   endif()
 endif()
 endif()
@@ -49,7 +44,7 @@ if(LAPACK_LIBRARIES)
   set(LapackTest_DIR ${PROJECT_BINARY_DIR}/LapackTest)
   file(MAKE_DIRECTORY ${LapackTest_DIR})
 
-  # Create a CMakeLists.txt file 
+  # Create a CMakeLists.txt file
   file(WRITE ${LapackTest_DIR}/CMakeLists.txt
     "CMAKE_MINIMUM_REQUIRED(VERSION 2.4)\n"
     "PROJECT(ltest C)\n"
@@ -85,7 +80,7 @@ if(LAPACK_LIBRARIES)
   try_compile(LTEST_OK ${LapackTest_DIR} ${LapackTest_DIR}
     ltest OUTPUT_VARIABLE MY_OUTPUT)
 
-  # To ensure we do not use stuff from the previous attempts, 
+  # To ensure we do not use stuff from the previous attempts,
   # we must remove the CMakeFiles directory.
   file(REMOVE_RECURSE ${LapackTest_DIR}/CMakeFiles)
 

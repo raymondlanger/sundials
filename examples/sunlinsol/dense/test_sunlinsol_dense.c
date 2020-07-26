@@ -1,23 +1,19 @@
 /*
- * ----------------------------------------------------------------- 
+ * -----------------------------------------------------------------
  * Programmer(s): Daniel Reynolds, Ashley Crawford @ SMU
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This is the testing routine to check the SUNLinSol Dense module
- * implementation. 
+ * implementation.
  * -----------------------------------------------------------------
  */
 
@@ -30,11 +26,20 @@
 #include <sundials/sundials_math.h>
 #include "test_sunlinsol.h"
 
+#if defined(SUNDIALS_EXTENDED_PRECISION)
+#define GSYM "Lg"
+#define ESYM "Le"
+#define FSYM "Lf"
+#else
+#define GSYM "g"
+#define ESYM "e"
+#define FSYM "f"
+#endif
 
 /* ----------------------------------------------------------------------
- * SUNDenseLinearSolver Testing Routine
+ * SUNLinSol_Dense Testing Routine
  * --------------------------------------------------------------------*/
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   int             fails = 0;          /* counter for test failures  */
   sunindextype    cols, rows;         /* matrix columns, rows       */
@@ -51,10 +56,10 @@ int main(int argc, char *argv[])
     return(-1);
   }
 
-  cols = atol(argv[1]); 
+  cols = (sunindextype) atol(argv[1]);
   if (cols <= 0) {
     printf("ERROR: number of matrix columns must be a positive integer \n");
-    return(-1); 
+    return(-1);
   }
 
   rows = cols;
@@ -77,7 +82,7 @@ int main(int argc, char *argv[])
   for (j=0; j<cols; j++) {
     colj = SUNDenseMatrix_Column(A, j);
     for (k=0; k<rows; k++)
-      colj[k] = (realtype) rand() / (realtype) RAND_MAX / cols;    
+      colj[k] = (realtype) rand() / (realtype) RAND_MAX / cols;
   }
 
   /* Create anti-identity matrix */
@@ -86,14 +91,14 @@ int main(int argc, char *argv[])
     colj = SUNDenseMatrix_Column(I,j);
     colj[k] = 1;
     j = j-1;
-  }    
-  
+  }
+
   /* Add anti-identity to ensure the solver needs to do row-swapping */
   for (k=0; k<rows; k++){
     for(j=0; j<cols; j++){
       colj = SUNDenseMatrix_Column(A,j);
       colIj = SUNDenseMatrix_Column(I,j);
-      colj[k]  = colj[k] + colIj[k]; 
+      colj[k]  = colj[k] + colIj[k];
    }
   }
 
@@ -101,7 +106,7 @@ int main(int argc, char *argv[])
   xdata = N_VGetArrayPointer(x);
   for (j=0; j<cols; j++) {
     xdata[j] = (realtype) rand() / (realtype) RAND_MAX;
-  } 
+  }
 
   /* copy A and x into B and y to print in case of solver failure */
   SUNMatCopy(A, B);
@@ -111,18 +116,28 @@ int main(int argc, char *argv[])
   fails = SUNMatMatvec(A, x, b);
   if (fails) {
     printf("FAIL: SUNLinSol SUNMatMatvec failure\n");
+
+    /* Free matrices and vectors */
+    SUNMatDestroy(A);
+    SUNMatDestroy(B);
+    SUNMatDestroy(I);
+    N_VDestroy(x);
+    N_VDestroy(y);
+    N_VDestroy(b);
+
     return(1);
   }
 
   /* Create dense linear solver */
-  LS = SUNDenseLinearSolver(x, A);
-  
+  LS = SUNLinSol_Dense(x, A);
+
   /* Run Tests */
   fails += Test_SUNLinSolInitialize(LS, 0);
   fails += Test_SUNLinSolSetup(LS, A, 0);
-  fails += Test_SUNLinSolSolve(LS, A, x, b, RCONST(1.0e-15), 0);
- 
+  fails += Test_SUNLinSolSolve(LS, A, x, b, 100*UNIT_ROUNDOFF, 0);
+
   fails += Test_SUNLinSolGetType(LS, SUNLINEARSOLVER_DIRECT, 0);
+  fails += Test_SUNLinSolGetID(LS, SUNLINEARSOLVER_DENSE, 0);
   fails += Test_SUNLinSolLastFlag(LS, 0);
   fails += Test_SUNLinSolSpace(LS, 0);
 
@@ -145,8 +160,10 @@ int main(int argc, char *argv[])
   SUNLinSolFree(LS);
   SUNMatDestroy(A);
   SUNMatDestroy(B);
+  SUNMatDestroy(I);
   N_VDestroy(x);
   N_VDestroy(y);
+  N_VDestroy(b);
 
   return(fails);
 }
@@ -159,7 +176,7 @@ int check_vector(N_Vector X, N_Vector Y, realtype tol)
   int failure = 0;
   sunindextype i, local_length;
   realtype *Xdata, *Ydata, maxerr;
-  
+
   Xdata = N_VGetArrayPointer(X);
   Ydata = N_VGetArrayPointer(Y);
   local_length = N_VGetLength_Serial(X);
@@ -172,10 +189,14 @@ int check_vector(N_Vector X, N_Vector Y, realtype tol)
     maxerr = ZERO;
     for(i=0; i < local_length; i++)
       maxerr = SUNMAX(SUNRabs(Xdata[i]-Ydata[i]), maxerr);
-    printf("check err failure: maxerr = %g (tol = %g)\n",
+    printf("check err failure: maxerr = %"GSYM" (tol = %"GSYM")\n",
 	   maxerr, tol);
     return(1);
   }
   else
     return(0);
+}
+
+void sync_device()
+{
 }

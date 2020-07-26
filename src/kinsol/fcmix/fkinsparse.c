@@ -3,15 +3,15 @@
  *                Daniel R. Reynolds @ SMU
  *                David J. Gardner @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2015, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -20,7 +20,7 @@
 #include "fkinsol.h"
 #include "kinsol_impl.h"
 
-#include <kinsol/kinsol_direct.h>
+#include <kinsol/kinsol_ls.h>
 #include <sunmatrix/sunmatrix_sparse.h>
 
 /*=============================================================*/
@@ -33,7 +33,7 @@ extern "C" {
  
 extern void FKIN_SPJAC(realtype *Y, realtype *FY, long int *N,
                        long int *NNZ, realtype *JDATA,
-                       long int *JRVALS, long int *JCPTRS,
+                       sunindextype *JRVALS, sunindextype *JCPTRS,
                        realtype *V1, realtype *V2, int *ier);
  
 #ifdef __cplusplus
@@ -52,7 +52,7 @@ void FKIN_SPARSESETJAC(int *ier)
                   "Sparse Fortran users must configure SUNDIALS with 64-bit integers.");
   *ier = 1;
 #else
-  *ier = KINDlsSetJacFn(KIN_kinmem, FKINSparseJac);
+  *ier = KINSetJacFn(KIN_kinmem, FKINSparseJac);
 #endif
 }
 
@@ -66,7 +66,8 @@ int FKINSparseJac(N_Vector y, N_Vector fy, SUNMatrix J,
 {
   int ier;
   realtype *ydata, *fydata, *v1data, *v2data, *Jdata;
-  long int NP, NNZ, *indexvals, *indexptrs;
+  long int NP, NNZ;
+  sunindextype *indexvals, *indexptrs;
  
   ydata   = N_VGetArrayPointer(y);
   fydata  = N_VGetArrayPointer(fy);

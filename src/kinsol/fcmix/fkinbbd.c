@@ -3,15 +3,15 @@
  *                Aaron Collier @ LLNL
  *                David J. Gardner @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This module contains the routines necessary to interface with
  * the KINBBDPRE module and user-supplied Fortran routines. Generic
@@ -62,8 +62,15 @@ extern void FK_COMMFN(long int* NLOC, realtype* ULOC, int* IER);
 void FKIN_BBDINIT(long int *nlocal, long int *mudq, long int *mldq,
 		  long int *mu, long int *ml, int *ier)
 {
-  *ier = KINBBDPrecInit(KIN_kinmem, *nlocal, *mudq, *mldq, *mu, *ml, ZERO,
-                        (KINBBDLocalFn) FKINgloc, (KINBBDCommFn) FKINgcomm);
+  *ier = KINBBDPrecInit(KIN_kinmem,
+                        (sunindextype)(*nlocal),
+                        (sunindextype)(*mudq),
+                        (sunindextype)(*mldq),
+                        (sunindextype)(*mu),
+                        (sunindextype)(*ml),
+                        ZERO,
+                        (KINBBDLocalFn) FKINgloc,
+                        (KINBBDCommFn) FKINgcomm);
 
   return;
 }
@@ -126,7 +133,7 @@ int FKINgcomm(long int Nloc, N_Vector uu, void *user_data)
 
   /* Get pointers to vector data */
   uloc = N_VGetArrayPointer(uu);
-  
+
   /* Call user-supplied routine */
   FK_COMMFN(&Nloc, uloc, &ier);
 
@@ -137,7 +144,7 @@ int FKINgcomm(long int Nloc, N_Vector uu, void *user_data)
  * ----------------------------------------------------------------
  * Function : FKIN_BBDOPT
  * ----------------------------------------------------------------
- * C function FKIN_BBDOPT is used to access optional outputs 
+ * C function FKIN_BBDOPT is used to access optional outputs
  * realated to the BBD preconditioner.
  * ----------------------------------------------------------------
  */
@@ -149,4 +156,3 @@ void FKIN_BBDOPT(long int *lenrpw, long int *lenipw, long int *nge)
 
   return;
 }
-

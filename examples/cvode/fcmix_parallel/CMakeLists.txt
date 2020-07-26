@@ -1,15 +1,15 @@
 # ---------------------------------------------------------------
-# Programmer:  Radu Serban @ LLNL
+# Programmer(s): Radu Serban @ LLNL
 # ---------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Lawrence Livermore National Laboratory in part under
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2020, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # CMakeLists.txt file for the FCVODE parallel examples
 # ---------------------------------------------------------------
@@ -18,105 +18,110 @@
 # type is develop for examples excluded from 'make test' in releases
 
 # Examples using SUNDIALS linear solvers
-SET(FCVODE_examples
+set(FCVODE_examples
   "fcvDiag_non_p\;1\;2\;develop"
   "fcvDiag_kry_bbd_p\;1\;2\;develop"
   "fcvDiag_kry_p\;1\;2\;develop"
   )
 
-# Check whether we use MPI compiler scripts.
-# If yes, then change the Fortran compiler to the MPIF77 script.
-# If not, then add the MPI include directory for MPI headers.
-IF(MPI_MPIF77)
-  # use MPI_MPIF77 as the compiler
-  SET(CMAKE_Fortran_COMPILER ${MPI_MPIF77})
-ELSE()
+if(MPI_Fortran_COMPILER)
+  # use MPI wrapper as the compiler
+  set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
+else()
   # add MPI_INCLUDE_PATH to include directories
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ENDIF()
+  include_directories(${MPI_INCLUDE_PATH})
+endif()
 
 # Specify libraries to link against (through the target that was used to
 # generate them) based on the value of the variable LINK_LIBRARY_TYPE
-IF(LINK_LIBRARY_TYPE MATCHES "static")
-  SET(CVODE_LIB sundials_cvode_static)
-  SET(NVECP_LIB sundials_nvecparallel_static)
-  SET(FNVECP_LIB sundials_fnvecparallel_static)
-ELSE()
-  SET(CVODE_LIB sundials_cvode_shared)
-  SET(NVECP_LIB sundials_nvecparallel_shared)
-  SET(FNVECP_LIB sundials_fnvecparallel_shared)
-ENDIF()
+if(LINK_LIBRARY_TYPE MATCHES "static")
+  set(CVODE_LIB sundials_cvode_static)
+  set(NVECP_LIB sundials_nvecparallel_static)
+  set(FNVECP_LIB sundials_fnvecparallel_static)
+else()
+  set(CVODE_LIB sundials_cvode_shared)
+  set(NVECP_LIB sundials_nvecparallel_shared)
+  set(FNVECP_LIB sundials_fnvecparallel_shared)
+endif()
+
+if(SUNDIALS_BUILD_PACKAGE_FUSED_KERNELS)
+  list(APPEND CVODE_LIB
+       sundials_cvode_fused_stubs_${LINK_LIBRARY_TYPE})
+endif()
 
 # Only static FCMIX libraries are available
-SET(FCVODE_LIB sundials_fcvode_static)
+set(FCVODE_LIB sundials_fcvode_static)
 
 # Set-up linker flags and link libraries
-SET(SUNDIALS_LIBS ${FCVODE_LIB} ${CVODE_LIB} ${FNVECP_LIB} ${NVECP_LIB} ${EXTRA_LINK_LIBS})
+set(SUNDIALS_LIBS ${FCVODE_LIB} ${CVODE_LIB} ${FNVECP_LIB} ${NVECP_LIB} ${EXTRA_LINK_LIBS})
 
 
 # Add the build and install targets for each example
-FOREACH(example_tuple ${FCVODE_examples})
+foreach(example_tuple ${FCVODE_examples})
 
   # parse the example tuple
-  LIST(GET example_tuple 0 example)
-  LIST(GET example_tuple 1 number_of_nodes)
-  LIST(GET example_tuple 2 number_of_tasks)
-  LIST(GET example_tuple 3 example_type)
+  list(GET example_tuple 0 example)
+  list(GET example_tuple 1 number_of_nodes)
+  list(GET example_tuple 2 number_of_tasks)
+  list(GET example_tuple 3 example_type)
 
   # example source files
-  ADD_EXECUTABLE(${example} ${example}.f)
+  add_executable(${example} ${example}.f)
 
-  SET_TARGET_PROPERTIES(${example} PROPERTIES FOLDER "Examples")
+  set_target_properties(${example} PROPERTIES FOLDER "Examples")
 
   # add example to regression tests
-  SUNDIALS_ADD_TEST(${example} ${example}
+  sundials_add_test(${example} ${example}
     MPI_NPROCS ${number_of_tasks}
     ANSWER_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     ANSWER_FILE ${example}.out
     EXAMPLE_TYPE ${example_type})
 
   # libraries to link against
-  TARGET_LINK_LIBRARIES(${example} ${SUNDIALS_LIBS})
+  target_link_libraries(${example} ${SUNDIALS_LIBS})
 
-  IF(NOT MPI_MPIF77)
-    TARGET_LINK_LIBRARIES(${example} ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARIES})
-  ENDIF()
+  if(NOT MPI_Fortran_COMPILER)
+    target_link_libraries(${example} ${MPI_LIBRARY} ${MPI_EXTRA_LIBRARIES})
+  endif()
 
   # install example source and out files
-  IF(EXAMPLES_INSTALL)
-    INSTALL(FILES ${example}.f ${example}.out
+  if(EXAMPLES_INSTALL)
+    install(FILES ${example}.f ${example}.out
       DESTINATION ${EXAMPLES_INSTALL_PATH}/cvode/fcmix_parallel)
-  ENDIF()
+  endif()
 
-ENDFOREACH(example_tuple ${FCVODE_examples})
+endforeach(example_tuple ${FCVODE_examples})
 
 
 # create Makfile and CMakeLists.txt for examples
-IF(EXAMPLES_INSTALL)
+if(EXAMPLES_INSTALL)
 
   # Install the README file
-  INSTALL(FILES README DESTINATION ${EXAMPLES_INSTALL_PATH}/cvode/fcmix_parallel)
+  install(FILES README DESTINATION ${EXAMPLES_INSTALL_PATH}/cvode/fcmix_parallel)
 
   # Prepare substitution variables for Makefile and/or CMakeLists templates
-  SET(SOLVER "CVODE")
-  SET(SOLVER_LIB "sundials_cvode")
-  SET(SOLVER_FLIB "sundials_fcvode")
+  set(SOLVER "CVODE")
+  set(SOLVER_LIB "sundials_cvode")
+  set(SOLVER_FLIB "sundials_fcvode")
+  if(SUNDIALS_BUILD_PACKAGE_FUSED_KERNELS)
+    set(LIBS "-lsundials_cvode_fused_stubs ${LIBS}")
+  endif()
 
-  EXAMPLES2STRING(FCVODE_examples EXAMPLES)
+  examples2string(FCVODE_examples EXAMPLES)
 
   # Regardless of the platform we're on, we will generate and install
   # CMakeLists.txt file for building the examples. This file  can then
   # be used as a template for the user's own programs.
 
   # generate CMakelists.txt in the binary directory
-  CONFIGURE_FILE(
+  configure_file(
     ${PROJECT_SOURCE_DIR}/examples/templates/cmakelists_parallel_F77_ex.in
     ${PROJECT_BINARY_DIR}/examples/cvode/fcmix_parallel/CMakeLists.txt
     @ONLY
     )
 
   # install CMakelists.txt
-  INSTALL(
+  install(
     FILES ${PROJECT_BINARY_DIR}/examples/cvode/fcmix_parallel/CMakeLists.txt
     DESTINATION ${EXAMPLES_INSTALL_PATH}/cvode/fcmix_parallel
     )
@@ -125,19 +130,22 @@ IF(EXAMPLES_INSTALL)
   # building the examples. This makefile can then be used as a template
   # for the user's own programs.
 
-  IF(UNIX)
+  if(UNIX)
     # generate Makefile and place it in the binary dir
-    CONFIGURE_FILE(
+    configure_file(
       ${PROJECT_SOURCE_DIR}/examples/templates/makefile_parallel_F77_ex.in
       ${PROJECT_BINARY_DIR}/examples/cvode/fcmix_parallel/Makefile_ex
       @ONLY
       )
     # install the configured Makefile_ex as Makefile
-    INSTALL(
+    install(
       FILES ${PROJECT_BINARY_DIR}/examples/cvode/fcmix_parallel/Makefile_ex
       DESTINATION ${EXAMPLES_INSTALL_PATH}/cvode/fcmix_parallel
       RENAME Makefile
       )
-  ENDIF(UNIX)
+  endif(UNIX)
 
-ENDIF(EXAMPLES_INSTALL)
+  # add test_install target
+  sundials_add_test_install(cvode fcmix_parallel)
+
+endif(EXAMPLES_INSTALL)

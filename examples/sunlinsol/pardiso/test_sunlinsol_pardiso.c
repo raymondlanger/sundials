@@ -19,7 +19,7 @@
 #include "test_sunlinsol.h"
 
 /* ----------------------------------------------------------------------
- * SUNPARDISO Linear Solver Testing Routine
+ * SUNLinSol_PARDISO Linear Solver Testing Routine
  * --------------------------------------------------------------------*/
 int main(int argc, char *argv[]) 
 {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     return(-1);
   }
 
-  N = atol(argv[1]); 
+  N = (sunindextype) atol(argv[1]); 
   if (N <= 0) {
     printf("ERROR: matrix size must be a positive integer \n");
     return(-1); 
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
 
   printf("Creating linear solver\n");
    // Create PARDISO linear solver 
-  LS = SUNPARDISO(x, A);
+  LS = SUNLinSol_PARDISO(x, A);
   
   /* Run Tests */
   fails += Test_SUNLinSolInitialize(LS, 0);
@@ -351,6 +351,7 @@ int main(int argc, char *argv[])
   fails += Test_SUNLinSolSolve(LS, A, x, b, RCONST(1.0e-13), 0);
  
   fails += Test_SUNLinSolGetType(LS, SUNLINEARSOLVER_DIRECT, 0);
+  fails += Test_SUNLinSolGetID(LS, SUNLINEARSOLVER_PARDISO, 0);
   fails += Test_SUNLinSolLastFlag(LS, 0);
   fails += Test_SUNLinSolSpace(LS, 0);
 
@@ -411,4 +412,8 @@ int check_vector(N_Vector X, N_Vector Y, realtype tol)
   }
   else
     return(0);
+}
+
+void sync_device()
+{
 }

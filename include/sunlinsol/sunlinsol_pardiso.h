@@ -259,12 +259,12 @@ typedef struct _SUNLinearSolverContent_PARDISO *SUNLinearSolverContent_PARDISO;
  * -----------------------------------------------------------------
  */
 
-SUNDIALS_EXPORT SUNLinearSolver SUNPARDISO(N_Vector y, SUNMatrix A);
+SUNDIALS_EXPORT SUNLinearSolver SUNLinSol_PARDISO(N_Vector y, SUNMatrix A);
 
-SUNDIALS_EXPORT int SUNPARDISOReInit(SUNLinearSolver S, SUNMatrix A,
+SUNDIALS_EXPORT int SUNLinSol_PARDISOReInit(SUNLinearSolver S, SUNMatrix A,
                                      sunindextype nnz, int reinit_type);
 
-SUNDIALS_EXPORT int SUNPARDISOSetOrdering(SUNLinearSolver S,
+SUNDIALS_EXPORT int SUNLinSol_PARDISOSetOrdering(SUNLinearSolver S,
                                           int ordering_choice);
 
 /*
@@ -275,12 +275,13 @@ SUNDIALS_EXPORT int SUNPARDISOSetOrdering(SUNLinearSolver S,
 
 SUNDIALS_EXPORT SUNLinearSolver_Type
 SUNLinSolGetType_PARDISO(SUNLinearSolver S);
+SUNDIALS_EXPORT SUNLinearSolver_ID SUNLinSolGetID_PARDISO(SUNLinearSolver S);
 SUNDIALS_EXPORT int SUNLinSolInitialize_PARDISO(SUNLinearSolver S);
 SUNDIALS_EXPORT int SUNLinSolSetup_PARDISO(SUNLinearSolver S, SUNMatrix A);
 SUNDIALS_EXPORT int SUNLinSolSolve_PARDISO(SUNLinearSolver S, SUNMatrix A,
                                            N_Vector x, N_Vector b,
                                            realtype tol);
-SUNDIALS_EXPORT long int SUNLinSolLastFlag_PARDISO(SUNLinearSolver S);
+SUNDIALS_EXPORT sunindextype SUNLinSolLastFlag_PARDISO(SUNLinearSolver S);
 SUNDIALS_EXPORT int SUNLinSolSpace_PARDISO(SUNLinearSolver S, long int *lenrwLS,
                                            long int *leniwLS);
 SUNDIALS_EXPORT int SUNLinSolFree_PARDISO(SUNLinearSolver S);

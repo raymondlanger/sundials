@@ -29,7 +29,6 @@
 #include <nvector/nvector_serial.h>     /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_sparse.h> /* access to sparse SUNMatrix           */
 #include <sunlinsol/sunlinsol_pardiso.h>    /* access to Pardiso sparse direct solver   */
-#include <cvode/cvode_direct.h>         /* access to CVDls interface            */
 #include <sundials/sundials_types.h>    /* defs. of realtype, sunindextype      */
 
 /* User-defined vector and matrix accessor macro: Ith */
@@ -126,7 +125,7 @@ int main()
 
   /* Call CVodeCreate to create the solver memory and specify the 
    * Backward Differentiation Formula and the use of a Newton iteration */
-  cvode_mem = CVodeCreate(CV_BDF, CV_NEWTON);
+  cvode_mem = CVodeCreate(CV_BDF);
   if (check_flag((void *)cvode_mem, "CVodeCreate", 0)) return(1);
   
   /* Call CVodeInit to initialize the integrator memory and specify the
@@ -149,17 +148,17 @@ int main()
   A = SUNSparseMatrix(NEQ, NEQ, nnz, CSC_MAT);
   if(check_flag((void *)A, "SUNSparseMatrix", 0)) return(1);
 
-  /* Create KLU solver object for use by CVode */
-  LS = SUNPARDISO(y, A);
-  if(check_flag((void *)LS, "SUNPARDISO", 0)) return(1);
+  /* Create PARDISO solver object for use by CVode */
+  LS = SUNLinSol_PARDISO(y, A);
+  if(check_flag((void *)LS, "SUNLinSol_PARDISO", 0)) return(1);
 
-  /* Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode */
-  flag = CVDlsSetLinearSolver(cvode_mem, LS, A);
-  if(check_flag(&flag, "CVDlsSetLinearSolver", 1)) return(1);
+  /* Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode */
+  flag = CVodeSetLinearSolver(cvode_mem, LS, A);
+  if(check_flag(&flag, "CVodeSetLinearSolver", 1)) return(1);
 
   /* Set the user-supplied Jacobian routine Jac */
-  flag = CVDlsSetJacFn(cvode_mem, Jac);
-  if(check_flag(&flag, "CVDlsSetJacFn", 1)) return(1);
+  flag = CVodeSetJacFn(cvode_mem, Jac);
+  if(check_flag(&flag, "CVodeSetJacFn", 1)) return(1);
 
   /* In loop, call CVode, print results, and test for error.
      Break out of loop when NOUT preset output times have been reached.  */
@@ -336,8 +335,8 @@ static void PrintFinalStats(void *cvode_mem)
   flag = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_flag(&flag, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  flag = CVDlsGetNumJacEvals(cvode_mem, &nje);
-  check_flag(&flag, "CVDlsGetNumJacEvals", 1);
+  flag = CVodeGetNumJacEvals(cvode_mem, &nje);
+  check_flag(&flag, "CVodeGetNumJacEvals", 1);
 
   flag = CVodeGetNumGEvals(cvode_mem, &nge);
   check_flag(&flag, "CVodeGetNumGEvals", 1);

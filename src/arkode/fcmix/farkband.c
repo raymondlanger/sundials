@@ -1,21 +1,17 @@
 /*---------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  *---------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *---------------------------------------------------------------
- * Fortran/C interface routines for ARKODE/ARKDLS, for the case
+ * Fortran/C interface routines for ARKODE/ARKLS, for the case
  * of a user-supplied Jacobian approximation routine.
  *--------------------------------------------------------------*/
 
@@ -23,7 +19,7 @@
 #include <stdlib.h>
 #include "farkode.h"
 #include "arkode_impl.h"
-#include <arkode/arkode_direct.h>
+#include <arkode/arkode_arkstep.h>
 #include <sunmatrix/sunmatrix_band.h>
 
 
@@ -38,10 +34,10 @@ extern "C" {
   extern void FARK_BJAC(long int *N, long int *MU, 
                         long int *ML, long int *EBAND, 
                         realtype *T, realtype *Y, realtype *FY,
-  			realtype *BJAC, realtype *H,
-  			long int *IPAR, realtype *RPAR,
-  			realtype *V1, realtype *V2,
-  			realtype *V3, int *IER);
+                        realtype *BJAC, realtype *H,
+                        long int *IPAR, realtype *RPAR,
+                        realtype *V1, realtype *V2,
+                        realtype *V3, int *IER);
 
 #ifdef __cplusplus
 }
@@ -49,14 +45,14 @@ extern "C" {
 
 /*=============================================================*/
 
-/* Fortran interface routine to ARKDlsSetJacFn; see farkode.h
+/* Fortran interface routine to ARKStepSetJacFn; see farkode.h
    for further details */
 void FARK_BANDSETJAC(int *flag, int *ier)
 {
   if (*flag == 0) {
-    *ier = ARKDlsSetJacFn(ARK_arkodemem, NULL);
+    *ier = ARKStepSetJacFn(ARK_arkodemem, NULL);
   } else {
-    *ier = ARKDlsSetJacFn(ARK_arkodemem, FARKBandJac);
+    *ier = ARKStepSetJacFn(ARK_arkodemem, FARKBandJac);
   }
   return;
 }
@@ -67,7 +63,7 @@ void FARK_BANDSETJAC(int *flag, int *ier)
    farkode.h for further details */
 int FARKBandJac(realtype t, N_Vector y, N_Vector fy, SUNMatrix J,
                 void *user_data, N_Vector vtemp1, N_Vector vtemp2,
-		N_Vector vtemp3)
+                N_Vector vtemp3)
 {
   realtype *ydata, *fydata, *jacdata, *v1data, *v2data, *v3data;
   realtype h;
@@ -75,7 +71,7 @@ int FARKBandJac(realtype t, N_Vector y, N_Vector fy, SUNMatrix J,
   FARKUserData ARK_userdata;
   int ier = 0;
 
-  ARKodeGetLastStep(ARK_arkodemem, &h);
+  ARKStepGetLastStep(ARK_arkodemem, &h);
   ydata   = N_VGetArrayPointer(y);
   fydata  = N_VGetArrayPointer(fy);
   v1data  = N_VGetArrayPointer(vtemp1);
@@ -90,8 +86,8 @@ int FARKBandJac(realtype t, N_Vector y, N_Vector fy, SUNMatrix J,
   ARK_userdata = (FARKUserData) user_data;
 
   FARK_BJAC(&N, &mupper, &mlower, &eband, &t, ydata, fydata,
-	    jacdata, &h, ARK_userdata->ipar, ARK_userdata->rpar,
-	    v1data, v2data, v3data, &ier);
+            jacdata, &h, ARK_userdata->ipar, ARK_userdata->rpar,
+            v1data, v2data, v3data, &ier);
   return(ier);
 }
 

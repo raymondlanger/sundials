@@ -2,19 +2,15 @@
  * Programmer(s): Daniel R. Reynolds @ SMU
  *                Aaron Collier @ LLNL
  *-----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *-----------------------------------------------------------------
  * This module contains the routines necessary to interface with the
  * IDABBDPRE module and user-supplied Fortran routines.
@@ -47,7 +43,7 @@ extern "C" {
                           realtype* GLOC, long int* IPAR,
                           realtype* RPAR, int* IER);
   extern void FIDA_COMMFN(long int* NLOC, realtype* T,
-                          realtype* Y, realtype* YP, 
+                          realtype* Y, realtype* YP,
                           long int* IPAR, realtype* RPAR,
                           int* IER);
 
@@ -62,8 +58,13 @@ void FIDA_BBDINIT(long int *Nloc, long int *mudq,
                   long int *ml, realtype *dqrely,
                   int *ier)
 {
-  *ier = IDABBDPrecInit(IDA_idamem, *Nloc, *mudq, 
-                        *mldq, *mu, *ml, *dqrely,
+  *ier = IDABBDPrecInit(IDA_idamem,
+                        (sunindextype)(*Nloc),
+                        (sunindextype)(*mudq),
+                        (sunindextype)(*mldq),
+                        (sunindextype)(*mu),
+                        (sunindextype)(*ml),
+                        *dqrely,
                         (IDABBDLocalFn) FIDAgloc,
                         (IDABBDCommFn) FIDAcfn);
   return;
@@ -75,7 +76,10 @@ void FIDA_BBDREINIT(long int *Nloc, long int *mudq,
                     long int *mldq, realtype *dqrely,
                     int *ier)
 {
-  *ier = IDABBDPrecReInit(IDA_idamem, *mudq, *mldq, *dqrely);
+  *ier = IDABBDPrecReInit(IDA_idamem,
+                          (sunindextype)(*mudq),
+                          (sunindextype)(*mldq),
+                          *dqrely);
   return;
 }
 
@@ -105,7 +109,7 @@ int FIDAgloc(long int Nloc, realtype t, N_Vector yy,
   IDA_userdata = (FIDAUserData) user_data;
 
   /* Call user-supplied routine */
-  FIDA_GLOCFN(&Nloc, &t, yy_data, yp_data, gval_data, 
+  FIDA_GLOCFN(&Nloc, &t, yy_data, yp_data, gval_data,
               IDA_userdata->ipar, IDA_userdata->rpar, &ier);
   return(ier);
 }
@@ -135,7 +139,7 @@ int FIDAcfn(long int Nloc, realtype t, N_Vector yy, N_Vector yp,
   IDA_userdata = (FIDAUserData) user_data;
 
   /* Call user-supplied routine */
-  FIDA_COMMFN(&Nloc, &t, yy_data, yp_data, 
+  FIDA_COMMFN(&Nloc, &t, yy_data, yp_data,
               IDA_userdata->ipar, IDA_userdata->rpar, &ier);
   return(ier);
 }

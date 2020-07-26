@@ -2,26 +2,22 @@
  * Programmer(s): Carol Woodward @ LLNL
  *                Daniel R. Reynolds @ SMU
  *-----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *-----------------------------------------------------------------*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "fida.h"
 #include "ida_impl.h"
-#include <ida/ida_direct.h>
+#include <ida/ida_ls.h>
 #include <sunmatrix/sunmatrix_sparse.h>
 
 /*=============================================================*/
@@ -35,7 +31,7 @@ extern "C" {
 extern void FIDA_SPJAC(realtype *T, realtype *CJ, realtype *Y, 
 		       realtype *YP, realtype *R, long int *N,
                        long int *NNZ, realtype *JDATA,
-                       long int *JRVALS, long int *JCPTRS,
+                       sunindextype *JRVALS, sunindextype *JCPTRS,
                        realtype *H, long int *IPAR, realtype *RPAR, 
 		       realtype *V1, realtype *V2, 
 		       realtype *V3, int *ier);
@@ -56,7 +52,7 @@ void FIDA_SPARSESETJAC(int *ier)
                   "Sparse Fortran users must configure SUNDIALS with 64-bit integers.");
   *ier = 1;
 #else  
-  *ier = IDADlsSetJacFn(IDA_idamem, FIDASparseJac);
+  *ier = IDASetJacFn(IDA_idamem, FIDASparseJac);
 #endif
 }
 
@@ -71,7 +67,8 @@ int FIDASparseJac(realtype t, realtype cj, N_Vector y, N_Vector yp,
   int ier;
   realtype *ydata, *ypdata, *rdata, *v1data, *v2data, *v3data, *Jdata;
   realtype h;
-  long int NP, NNZ, *indexvals, *indexptrs; 
+  long int NP, NNZ; 
+  sunindextype *indexvals, *indexptrs; 
   FIDAUserData IDA_userdata;
 
   IDAGetLastStep(IDA_idamem, &h);

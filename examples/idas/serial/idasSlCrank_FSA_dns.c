@@ -1,22 +1,32 @@
 /* -----------------------------------------------------------------
  * Programmer: Radu Serban and Cosmin Petra @ LLNL
  * -----------------------------------------------------------------
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
+ * All rights reserved.
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
+ * -----------------------------------------------------------------
  * Simulation of a slider-crank mechanism modelled with 3 generalized
  * coordinates: crank angle, connecting bar angle, and slider location.
- * The mechanism moves under the action of a constant horizontal 
- * force applied to the connecting rod and a spring-damper connecting 
+ * The mechanism moves under the action of a constant horizontal
+ * force applied to the connecting rod and a spring-damper connecting
  * the crank and connecting rod.
  *
  * The equations of motion are formulated as a system of stabilized
  * index-2 DAEs (Gear-Gupta-Leimkuhler formulation).
  *
- * IDAS also computes sensitivities with respect to the problem 
- * parameters k (spring constant) and c (damper constant) of the 
+ * IDAS also computes sensitivities with respect to the problem
+ * parameters k (spring constant) and c (damper constant) of the
  * kinetic energy:
- *   G = int_t0^tend g(t,y,p) dt, 
+ *   G = int_t0^tend g(t,y,p) dt,
  * where
  *   g(t,y,p) = 0.5*J1*v1^2 + 0.5*J2*v3^2 + 0.5*m2*v2^2
- *              
+ *
  * -----------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -27,9 +37,7 @@
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
-#include <idas/idas_direct.h>          /* access to IDADls interface           */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
-#include <sundials/sundials_math.h>    /* defs. of SUNRabs, SUNRexp, etc.      */
 
 #define Ith(v,i)    NV_Ith_S(v,i-1)       /* i-th vector component i= 1..NEQ */
 
@@ -66,11 +74,11 @@ typedef struct {
   realtype F;
 } *UserData;
 
-static int ressc(realtype tres, N_Vector yy, N_Vector yp, 
+static int ressc(realtype tres, N_Vector yy, N_Vector yp,
            N_Vector resval, void *user_data);
 static int rhsQ(realtype t, N_Vector yy, N_Vector yp, N_Vector qdot, void *user_data);
 
-static int rhsQS(int Ns, realtype t, N_Vector yy, N_Vector yp, 
+static int rhsQS(int Ns, realtype t, N_Vector yy, N_Vector yp,
                  N_Vector *yyS, N_Vector *ypS, N_Vector rrQ, N_Vector *rhsvalQS,
                  void *user_data,  N_Vector yytmp, N_Vector yptmp, N_Vector tmpQS);
 
@@ -78,8 +86,8 @@ static int rhsQS(int Ns, realtype t, N_Vector yy, N_Vector yp,
 static void setIC(N_Vector yy, N_Vector yp, UserData data);
 static void force(N_Vector yy, realtype *Q, UserData data);
 
-static void PrintFinalStats(void *mem);
-static int check_flag(void *flagvalue, const char *funcname, int opt);
+static int PrintFinalStats(void *mem);
+static int check_retval(void *returnvalue, const char *funcname, int opt);
 /*
  *--------------------------------------------------------------------
  * Main Program
@@ -95,7 +103,7 @@ int main(void)
   realtype tret;
   realtype pbar[2];
   realtype dp, G, Gm[2], Gp[2];
-  int flag, is;
+  int retval, is;
   realtype atolS[NP];
   SUNMatrix A;
   SUNLinearSolver LS;
@@ -129,7 +137,7 @@ int main(void)
   NV_Ith_S(id, 8) = ZERO;
   NV_Ith_S(id, 7) = ZERO;
   NV_Ith_S(id, 6) = ZERO;
-  
+
   printf("\nSlider-Crank example for IDAS:\n");
 
   /* Consistent IC*/
@@ -142,52 +150,53 @@ int main(void)
 
   /* IDA initialization */
   mem = IDACreate();
-  flag = IDAInit(mem, ressc, TBEGIN, yy, yp);
-  flag = IDASStolerances(mem, RTOLF, ATOLF);
-  flag = IDASetUserData(mem, data);
-  flag = IDASetId(mem, id);
-  flag = IDASetSuppressAlg(mem, SUNTRUE);
-  flag = IDASetMaxNumSteps(mem, 20000);
+  retval = IDAInit(mem, ressc, TBEGIN, yy, yp);
+  retval = IDASStolerances(mem, RTOLF, ATOLF);
+  retval = IDASetUserData(mem, data);
+  retval = IDASetId(mem, id);
+  retval = IDASetSuppressAlg(mem, SUNTRUE);
+  retval = IDASetMaxNumSteps(mem, 20000);
 
   /* Create dense SUNMatrix for use in linear solves */
   A = SUNDenseMatrix(NEQ, NEQ);
-  if(check_flag((void *)A, "SUNDenseMatrix", 0)) return(1);
+  if(check_retval((void *)A, "SUNDenseMatrix", 0)) return(1);
 
   /* Create dense SUNLinearSolver object */
-  LS = SUNDenseLinearSolver(yy, A);
-  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+  LS = SUNLinSol_Dense(yy, A);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) return(1);
 
   /* Attach the matrix and linear solver */
-  flag = IDADlsSetLinearSolver(mem, LS, A);
-  if(check_flag(&flag, "IDADlsSetLinearSolver", 1)) return(1);
+  retval = IDASetLinearSolver(mem, LS, A);
+  if(check_retval(&retval, "IDASetLinearSolver", 1)) return(1);
 
-  flag = IDASensInit(mem, NP, IDA_SIMULTANEOUS, NULL, yyS, ypS);
+  retval = IDASensInit(mem, NP, IDA_SIMULTANEOUS, NULL, yyS, ypS);
   pbar[0] = data->params[0];pbar[1] = data->params[1];
-  flag = IDASetSensParams(mem, data->params, pbar, NULL);
-  flag = IDASensEEtolerances(mem);
+  retval = IDASetSensParams(mem, data->params, pbar, NULL);
+  retval = IDASensEEtolerances(mem);
   IDASetSensErrCon(mem, SUNTRUE);
-  
+
   N_VConst(ZERO, q);
-  flag = IDAQuadInit(mem, rhsQ, q);
-  flag = IDAQuadSStolerances(mem, RTOLQ, ATOLQ);
-  flag = IDASetQuadErrCon(mem, SUNTRUE);
-  
-  N_VConst(ZERO, qS[0]);
-  flag = IDAQuadSensInit(mem, rhsQS, qS);
+  retval = IDAQuadInit(mem, rhsQ, q);
+  retval = IDAQuadSStolerances(mem, RTOLQ, ATOLQ);
+  retval = IDASetQuadErrCon(mem, SUNTRUE);
+
+  for (is=0; is<NP; is++) N_VConst(ZERO, qS[is]);
+  retval = IDAQuadSensInit(mem, rhsQS, qS);
   atolS[0] = atolS[1] = ATOLQ;
-  flag = IDAQuadSensSStolerances(mem, RTOLQ, atolS);
-  flag = IDASetQuadSensErrCon(mem, SUNTRUE);  
-  
+  retval = IDAQuadSensSStolerances(mem, RTOLQ, atolS);
+  retval = IDASetQuadSensErrCon(mem, SUNTRUE);
+
 
   /* Perform forward run */
   printf("\nForward integration ... ");
 
-  flag = IDASolve(mem, TEND, &tret, yy, yp, IDA_NORMAL);
-  if (check_flag(&flag, "IDASolve", 1)) return(1);
+  retval = IDASolve(mem, TEND, &tret, yy, yp, IDA_NORMAL);
+  if (check_retval(&retval, "IDASolve", 1)) return(1);
 
   printf("done!\n");
 
-  PrintFinalStats(mem);
+  retval = PrintFinalStats(mem);
+  if (check_retval(&retval, "PrintFinalStats", 1)) return(1);
 
   IDAGetQuad(mem, &tret, q);
   printf("--------------------------------------------\n");
@@ -195,16 +204,16 @@ int main(void)
   printf("  G = %24.16Lf\n", Ith(q,1));
 #else
   printf("  G = %24.16f\n", Ith(q,1));
-#endif  
+#endif
   printf("--------------------------------------------\n\n");
-  
+
   IDAGetQuadSens(mem, &tret, qS);
   printf("-------------F O R W A R D------------------\n");
 #if defined(SUNDIALS_EXTENDED_PRECISION)
   printf("   dG/dp:  %12.4Le %12.4Le\n", Ith(qS[0],1), Ith(qS[1],1));
 #else
   printf("   dG/dp:  %12.4e %12.4e\n", Ith(qS[0],1), Ith(qS[1],1));
-#endif  
+#endif
   printf("--------------------------------------------\n\n");
 
   IDAFree(&mem);
@@ -220,23 +229,23 @@ int main(void)
   mem = IDACreate();
 
   setIC(yy, yp, data);
-  flag = IDAInit(mem, ressc, TBEGIN, yy, yp);
-  flag = IDASStolerances(mem, RTOLFD, ATOLFD);
-  flag = IDASetUserData(mem, data);
-  flag = IDASetId(mem, id);
-  flag = IDASetSuppressAlg(mem, SUNTRUE);
+  retval = IDAInit(mem, ressc, TBEGIN, yy, yp);
+  retval = IDASStolerances(mem, RTOLFD, ATOLFD);
+  retval = IDASetUserData(mem, data);
+  retval = IDASetId(mem, id);
+  retval = IDASetSuppressAlg(mem, SUNTRUE);
 
   /* Create dense SUNMatrix for use in linear solves */
   A = SUNDenseMatrix(NEQ, NEQ);
-  if(check_flag((void *)A, "SUNDenseMatrix", 0)) return(1);
+  if(check_retval((void *)A, "SUNDenseMatrix", 0)) return(1);
 
   /* Create dense SUNLinearSolver object */
-  LS = SUNDenseLinearSolver(yy, A);
-  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+  LS = SUNLinSol_Dense(yy, A);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) return(1);
 
   /* Attach the matrix and linear solver */
-  flag = IDADlsSetLinearSolver(mem, LS, A);
-  if(check_flag(&flag, "IDADlsSetLinearSolver", 1)) return(1);
+  retval = IDASetLinearSolver(mem, LS, A);
+  if(check_retval(&retval, "IDASetLinearSolver", 1)) return(1);
 
   N_VConst(ZERO, q);
   IDAQuadInit(mem, rhsQ, q);
@@ -317,7 +326,7 @@ int main(void)
   printf("   dG/dp:  %12.4Le %12.4Le\n", (G-Gm[0])/dp, (G-Gm[1])/dp);
 #else
   printf("   dG/dp:  %12.4e %12.4e\n", (G-Gm[0])/dp, (G-Gm[1])/dp);
-#endif  
+#endif
   printf("-----------------------------------------\n\n");
 
   printf("---------------FORWARD-------------------\n");
@@ -325,7 +334,7 @@ int main(void)
   printf("   dG/dp:  %12.4Le %12.4Le\n", (Gp[0]-G)/dp, (Gp[1]-G)/dp);
 #else
   printf("   dG/dp:  %12.4e %12.4e\n", (Gp[0]-G)/dp, (Gp[1]-G)/dp);
-#endif  
+#endif
   printf("-----------------------------------------\n\n");
 
   printf("--------------CENTERED-------------------\n");
@@ -333,7 +342,7 @@ int main(void)
   printf("   dG/dp:  %12.4Le %12.4Le\n", (Gp[0]-Gm[0])/(TWO*dp) ,(Gp[1]-Gm[1])/(TWO*dp));
 #else
   printf("   dG/dp:  %12.4e %12.4e\n", (Gp[0]-Gm[0])/(TWO*dp) ,(Gp[1]-Gm[1])/(TWO*dp));
-#endif  
+#endif
   printf("-----------------------------------------\n\n");
 
 
@@ -344,8 +353,12 @@ int main(void)
   N_VDestroy(yy);
   N_VDestroy(yp);
   N_VDestroy(q);
+
+  N_VDestroyVectorArray(yyS, NP);
+  N_VDestroyVectorArray(ypS, NP);
+  N_VDestroyVectorArray(qS,  NP);
   return(0);
-  
+
 }
 
 static void setIC(N_Vector yy, N_Vector yp, UserData data)
@@ -364,7 +377,7 @@ static void setIC(N_Vector yy, N_Vector yp, UserData data)
   J1 = data->J1;
   m2 = data->m2;
   J2 = data->J2;
-  
+
   q = pi/TWO;
   p = asin(-a);
   x = cos(p);
@@ -372,7 +385,7 @@ static void setIC(N_Vector yy, N_Vector yp, UserData data)
   NV_Ith_S(yy,0) = q;
   NV_Ith_S(yy,1) = x;
   NV_Ith_S(yy,2) = p;
-  
+
   force(yy, Q, data);
 
   NV_Ith_S(yp,3) = Q[0]/J1;
@@ -385,7 +398,7 @@ static void force(N_Vector yy, realtype *Q, UserData data)
 {
   realtype a, k, c, l0, F;
   realtype q, x, p;
-  realtype qd, xd, pd;  
+  realtype qd, xd, pd;
   realtype s1, c1, s2, c2, s21, c21;
   realtype l2, l, ld;
   realtype f, fl;
@@ -412,7 +425,7 @@ static void force(N_Vector yy, realtype *Q, UserData data)
   c21 = c2*c1 + s2*s1;
 
   l2 = x*x - x*(c2+a*c1) + (ONE + a*a)/FOUR + a*c21/TWO;
-  l = SUNRsqrt(l2);
+  l = sqrt(l2);
   ld = TWO*x*xd - xd*(c2+a*c1) + x*(s2*pd+a*s1*qd) - a*s21*(pd-qd)/TWO;
   ld /= TWO*l;
 
@@ -432,7 +445,7 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
   realtype a, J1, m2, J2;
   realtype *yval, *ypval, *rval;
   realtype q, x, p;
-  realtype qd, xd, pd;  
+  realtype qd, xd, pd;
   realtype lam1, lam2, mu1, mu2;
   realtype s1, c1, s2, c2;
 
@@ -443,8 +456,8 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
   m2 = data->m2;
   J2 = data->J2;
 
-  yval = N_VGetArrayPointer(yy); 
-  ypval = N_VGetArrayPointer(yp); 
+  yval = N_VGetArrayPointer(yy);
+  ypval = N_VGetArrayPointer(yp);
   rval = N_VGetArrayPointer(rr);
 
   q = yval[0];
@@ -470,11 +483,11 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
 
   rval[0] = ypval[0] - qd + a*s1*mu1 - a*c1*mu2;
   rval[1] = ypval[1] - xd + mu1;
-  rval[2] = ypval[2] - pd + s2*mu1 - c2*mu2; 
+  rval[2] = ypval[2] - pd + s2*mu1 - c2*mu2;
 
   rval[3] = J1*ypval[3] - Q[0] + a*s1*lam1 - a*c1*lam2;
   rval[4] = m2*ypval[4] - Q[1] + lam1;
-  rval[5] = J2*ypval[5] - Q[2] + s2*lam1 - c2*lam2; 
+  rval[5] = J2*ypval[5] - Q[2] + s2*lam1 - c2*lam2;
 
   rval[6] = x - c2 - a*c1;
   rval[7] = -s2 - a*s1;
@@ -488,15 +501,13 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
 static int rhsQ(realtype t, N_Vector yy, N_Vector yp, N_Vector qdot, void *user_data)
 {
   realtype v1, v2, v3;
-  realtype m1, J1, m2, J2, a;
+  realtype J1, m2, J2;
   UserData data;
-  
+
   data = (UserData) user_data;
   J1 = data->J1;
-  m1 = data->m1;
   m2 = data->m2;
   J2 = data->J2;
-  a  = data->a;
 
   v1 = Ith(yy,4);
   v2 = Ith(yy,5);
@@ -507,26 +518,25 @@ static int rhsQ(realtype t, N_Vector yy, N_Vector yp, N_Vector qdot, void *user_
   return(0);
 }
 
-static int rhsQS(int Ns, realtype t, N_Vector yy, N_Vector yp, 
+static int rhsQS(int Ns, realtype t, N_Vector yy, N_Vector yp,
                  N_Vector *yyS, N_Vector *ypS, N_Vector rrQ, N_Vector *rhsvalQS,
                  void *user_data,  N_Vector yytmp, N_Vector yptmp, N_Vector tmpQS)
 {
   realtype v1, v2, v3;
-  realtype m1, J1, m2, J2, a;
+  realtype J1, m2, J2;
   UserData data;
   realtype s1, s2, s3;
-  
+
   data = (UserData) user_data;
+
   J1 = data->J1;
-  m1 = data->m1;
   m2 = data->m2;
   J2 = data->J2;
-  a  = data->a;
 
   v1 = Ith(yy,4);
   v2 = Ith(yy,5);
   v3 = Ith(yy,6);
-  
+
   /* Sensitivities of v. */
   s1 = Ith(yyS[0],4);
   s2 = Ith(yyS[0],5);
@@ -543,18 +553,18 @@ static int rhsQS(int Ns, realtype t, N_Vector yy, N_Vector yp,
   return(0);
 }
 
-static void PrintFinalStats(void *mem)
+static int PrintFinalStats(void *mem)
 {
-  int flag;
+  int retval;
   long int nst, nni, nje, nre, nreLS, netf, ncfn;
 
-  flag = IDAGetNumSteps(mem, &nst);
-  flag = IDAGetNumResEvals(mem, &nre);
-  flag = IDADlsGetNumJacEvals(mem, &nje);
-  flag = IDAGetNumNonlinSolvIters(mem, &nni);
-  flag = IDAGetNumErrTestFails(mem, &netf);
-  flag = IDAGetNumNonlinSolvConvFails(mem, &ncfn);
-  flag = IDADlsGetNumResEvals(mem, &nreLS);
+  retval = IDAGetNumSteps(mem, &nst);
+  retval = IDAGetNumResEvals(mem, &nre);
+  retval = IDAGetNumJacEvals(mem, &nje);
+  retval = IDAGetNumNonlinSolvIters(mem, &nni);
+  retval = IDAGetNumErrTestFails(mem, &netf);
+  retval = IDAGetNumNonlinSolvConvFails(mem, &ncfn);
+  retval = IDAGetNumLinResEvals(mem, &nreLS);
 
   printf("\nFinal Run Statistics: \n\n");
   printf("Number of steps                    = %ld\n", nst);
@@ -563,29 +573,31 @@ static void PrintFinalStats(void *mem)
   printf("Number of nonlinear iterations     = %ld\n", nni);
   printf("Number of error test failures      = %ld\n", netf);
   printf("Number of nonlinear conv. failures = %ld\n", ncfn);
+
+  return(retval);
 }
 
 
-static int check_flag(void *flagvalue, const char *funcname, int opt)
+static int check_retval(void *returnvalue, const char *funcname, int opt)
 {
-  int *errflag;
+  int *retval;
 
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-  if (opt == 0 && flagvalue == NULL) {
+  if (opt == 0 && returnvalue == NULL) {
     fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
 	    funcname);
     return(1); }
 
-  /* Check if flag < 0 */
+  /* Check if retval < 0 */
   else if (opt == 1) {
-    errflag = (int *) flagvalue;
-    if (*errflag < 0) {
-      fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
-	      funcname, *errflag);
+    retval = (int *) returnvalue;
+    if (*retval < 0) {
+      fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with retval = %d\n\n",
+	      funcname, *retval);
       return(1); }}
 
   /* Check if function returned NULL pointer - no memory allocated */
-  else if (opt == 2 && flagvalue == NULL) {
+  else if (opt == 2 && returnvalue == NULL) {
     fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
 	    funcname);
     return(1); }

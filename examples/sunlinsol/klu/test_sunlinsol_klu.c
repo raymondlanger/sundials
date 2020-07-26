@@ -1,23 +1,19 @@
 /*
- * ----------------------------------------------------------------- 
+ * -----------------------------------------------------------------
  * Programmer(s): Daniel Reynolds @ SMU
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
- * This is the testing routine to check the SUNLinSol KLU module 
- * implementation. 
+ * This is the testing routine to check the SUNLinSol KLU module
+ * implementation.
  * -----------------------------------------------------------------
  */
 
@@ -33,9 +29,9 @@
 
 
 /* ----------------------------------------------------------------------
- * SUNKLU Linear Solver Testing Routine
+ * SUNLinSol_KLU Linear Solver Testing Routine
  * --------------------------------------------------------------------*/
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   int             fails = 0;          /* counter for test failures  */
   sunindextype    N;                  /* matrix columns, rows       */
@@ -45,6 +41,9 @@ int main(int argc, char *argv[])
   realtype        *matdata, *xdata;
   int             mattype, print_timing;
   sunindextype    i, j, k;
+  sun_klu_symbolic *symbolic;
+  sun_klu_numeric  *numeric;
+  sun_klu_common   *common;
 
   /* check input and set matrix dimensions */
   if (argc < 4){
@@ -52,19 +51,19 @@ int main(int argc, char *argv[])
     return(-1);
   }
 
-  N = atol(argv[1]); 
+  N = (sunindextype) atol(argv[1]);
   if (N <= 0) {
     printf("ERROR: matrix size must be a positive integer \n");
-    return(-1); 
+    return(-1);
   }
 
   mattype = atoi(argv[2]);
   if ((mattype != 0) && (mattype != 1)) {
     printf("ERROR: matrix type must be 0 or 1 \n");
-    return(-1); 
+    return(-1);
   }
   mattype = (mattype == 0) ? CSC_MAT : CSR_MAT;
-  
+
   print_timing = atoi(argv[3]);
   SetTiming(print_timing);
 
@@ -110,18 +109,42 @@ int main(int argc, char *argv[])
     printf("FAIL: SUNLinSol SUNMatMatvec failure\n");
     return(1);
   }
-  
+
   /* Create KLU linear solver */
-  LS = SUNKLU(x, A);
-  
+  LS = SUNLinSol_KLU(x, A);
+
   /* Run Tests */
   fails += Test_SUNLinSolInitialize(LS, 0);
   fails += Test_SUNLinSolSetup(LS, A, 0);
-  fails += Test_SUNLinSolSolve(LS, A, x, b, RCONST(1.0e-13), 0);
- 
+  fails += Test_SUNLinSolSolve(LS, A, x, b, 1000*UNIT_ROUNDOFF, 0);
+
   fails += Test_SUNLinSolGetType(LS, SUNLINEARSOLVER_DIRECT, 0);
+  fails += Test_SUNLinSolGetID(LS, SUNLINEARSOLVER_KLU, 0);
   fails += Test_SUNLinSolLastFlag(LS, 0);
   fails += Test_SUNLinSolSpace(LS, 0);
+
+  /* Test 'Get' routines */
+  symbolic = SUNLinSol_KLUGetSymbolic(LS);
+  if (symbolic->n != N) {
+    printf("FAIL: SUNLinSol_KLUGetSymbolic failure\n");
+    fails += 1;
+  } else {
+    printf("    PASSED test -- SUNLinSol_KLUGetSymbolic \n");
+  }
+  numeric = SUNLinSol_KLUGetNumeric(LS);
+  if (numeric->n != N) {
+    printf("FAIL: SUNLinSol_KLUGetNumeric failure\n");
+    fails += 1;
+  } else {
+    printf("    PASSED test -- SUNLinSol_KLUGetNumeric \n");
+  }
+  common = SUNLinSol_KLUGetCommon(LS);
+  if (common->singular_col != N) {
+    printf("FAIL: SUNLinSol_KLUGetCommon failure\n");
+    fails += 1;
+  } else {
+    printf("    PASSED test -- SUNLinSol_KLUGetCommon \n");
+  }
 
   /* Print result */
   if (fails) {
@@ -156,11 +179,11 @@ int check_vector(N_Vector X, N_Vector Y, realtype tol)
   int failure = 0;
   sunindextype i, local_length, maxloc;
   realtype *Xdata, *Ydata, maxerr;
-  
+
   Xdata = N_VGetArrayPointer(X);
   Ydata = N_VGetArrayPointer(Y);
   local_length = N_VGetLength_Serial(X);
-  
+
   /* check vector data */
   for(i=0; i < local_length; i++)
     failure += FNEQ(Xdata[i], Ydata[i], tol);
@@ -180,4 +203,8 @@ int check_vector(N_Vector X, N_Vector Y, realtype tol)
   }
   else
     return(0);
+}
+
+void sync_device()
+{
 }

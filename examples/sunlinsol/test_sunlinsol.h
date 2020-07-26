@@ -2,19 +2,15 @@
  * -----------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This is the header file contains the prototypes for functions to 
  * test SUNLinearSolver module implementations. 
@@ -34,15 +30,16 @@
 #define FNEQ(a,b,tol) (( SUNRabs((a)-(b)) > tol ))
 #endif
 
-
 #ifdef __cplusplus  /* wrapper to enable C++ usage */
 extern "C" {
 #endif
   /* Forward declarations for implementation specific utility functions */
   int check_vector(N_Vector X, N_Vector Y, realtype tol);
+  void sync_device();
    
   /* Test function declarations */
-  int Test_SUNLinSolGetType(SUNLinearSolver S, SUNLinearSolver_Type sunid, int myid);
+  int Test_SUNLinSolGetType(SUNLinearSolver S, SUNLinearSolver_Type suntype, int myid);
+  int Test_SUNLinSolGetID(SUNLinearSolver S, SUNLinearSolver_ID sunid, int myid);
   int Test_SUNLinSolLastFlag(SUNLinearSolver S, int myid);
   int Test_SUNLinSolSpace(SUNLinearSolver S, int myid);
   int Test_SUNLinSolNumIters(SUNLinearSolver S, int myid);

@@ -1,19 +1,15 @@
 /*---------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  *---------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *---------------------------------------------------------------
  * This module contains the routines necessary to interface with
  * the ARKBBDPRE module and user-supplied Fortran routines.
@@ -37,12 +33,12 @@ extern "C" {
 #endif
 
   extern void FARK_GLOCFN(long int *NLOC, realtype *T,
-			  realtype *YLOC, realtype *GLOC,
-			  long int *IPAR, realtype *RPAR,
-			  int *ier);
+                          realtype *YLOC, realtype *GLOC,
+                          long int *IPAR, realtype *RPAR,
+                          int *ier);
   extern void FARK_COMMFN(long int *NLOC, realtype *T,
-			  realtype *Y, long int *IPAR,
-			  realtype *RPAR, int *ier);
+                          realtype *Y, long int *IPAR,
+                          realtype *RPAR, int *ier);
 
 #ifdef __cplusplus
 }
@@ -55,12 +51,17 @@ extern "C" {
 void FARK_BBDINIT(long int *Nloc, long int *mudq,
                   long int *mldq, long int *mu,
                   long int *ml, realtype* dqrely,
-		  int *ier)
+                  int *ier)
 {
   /* Notes: FARKgloc is a pointer to the ARKLocalFn function,
      and FARKcfn is a pointer to the ARKCommFn function */
-  *ier = ARKBBDPrecInit(ARK_arkodemem, *Nloc, *mudq, *mldq,
-			*mu, *ml, *dqrely, 
+  *ier = ARKBBDPrecInit(ARK_arkodemem,
+                        (sunindextype)(*Nloc),
+                        (sunindextype)(*mudq),
+                        (sunindextype)(*mldq),
+                        (sunindextype)(*mu),
+                        (sunindextype)(*ml),
+                        *dqrely,
                         (ARKLocalFn) FARKgloc,
                         (ARKCommFn) FARKcfn);
   return;
@@ -73,7 +74,10 @@ void FARK_BBDINIT(long int *Nloc, long int *mudq,
 void FARK_BBDREINIT(long int *mudq, long int *mldq,
                     realtype* dqrely, int *ier)
 {
-  *ier = ARKBBDPrecReInit(ARK_arkodemem, *mudq, *mldq, *dqrely);
+  *ier = ARKBBDPrecReInit(ARK_arkodemem,
+                          (sunindextype)(*mudq),
+                          (sunindextype)(*mldq),
+                          *dqrely);
   return;
 }
 
@@ -82,7 +86,7 @@ void FARK_BBDREINIT(long int *mudq, long int *mldq,
 /* C interface to user-supplied Fortran routine FARKGLOCFN; see
    farkbbd.h for further details. */
 int FARKgloc(long int Nloc, realtype t, N_Vector yloc,
-	     N_Vector gloc, void *user_data)
+             N_Vector gloc, void *user_data)
 {
   realtype *yloc_data, *gloc_data;
   FARKUserData ARK_userdata;
@@ -116,7 +120,7 @@ int FARKcfn(long int Nloc, realtype t, N_Vector y, void *user_data)
   yloc = N_VGetArrayPointer(y);
   ARK_userdata = (FARKUserData) user_data;
   FARK_COMMFN(&Nloc, &t, yloc, ARK_userdata->ipar,
-	      ARK_userdata->rpar, &ier);
+              ARK_userdata->rpar, &ier);
   return(ier);
 }
 
@@ -125,7 +129,7 @@ int FARKcfn(long int Nloc, realtype t, N_Vector y, void *user_data)
 /* Fortran interface to C routines ARKBBDPrecGetWorkSpace and
    ARKBBDPrecGetNumGfnEvals; see farkbbd.h for further details */
 void FARK_BBDOPT(long int *lenrwbbd, long int *leniwbbd,
-		 long int *ngebbd)
+                 long int *ngebbd)
 {
   ARKBBDPrecGetWorkSpace(ARK_arkodemem, lenrwbbd, leniwbbd);
   ARKBBDPrecGetNumGfnEvals(ARK_arkodemem, ngebbd);

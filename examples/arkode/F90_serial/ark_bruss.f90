@@ -1,22 +1,15 @@
 !-----------------------------------------------------------------
 ! Programmer(s): Daniel R. Reynolds @ SMU
 !-----------------------------------------------------------------
-! LLNS/SMU Copyright Start
-! Copyright (c) 2015, Southern Methodist University and 
-! Lawrence Livermore National Security
-!
-! This work was performed under the auspices of the U.S. Department 
-! of Energy by Southern Methodist University and Lawrence Livermore 
-! National Laboratory under Contract DE-AC52-07NA27344.
-! Produced at Southern Methodist University and the Lawrence 
-! Livermore National Laboratory.
-!
+! SUNDIALS Copyright Start
+! Copyright (c) 2002-2020, Lawrence Livermore National Security
+! and Southern Methodist University.
 ! All rights reserved.
-! For details, see the LICENSE file.
-! LLNS/SMU Copyright End
-! Copyright (c) 2013, Southern Methodist University.
-! All rights reserved.
-! For details, see the LICENSE file.
+!
+! See the top-level LICENSE and NOTICE files for details.
+!
+! SPDX-License-Identifier: BSD-3-Clause
+! SUNDIALS Copyright End
 !-----------------------------------------------------------------
 ! Example problem:
 ! 
@@ -54,11 +47,11 @@ program driver
   include "sundials/sundials_fconfig.h"
 
   ! general problem variables
-  integer(kind=SUNINDEXTYPE), parameter :: NEQ=3
+  integer*8, parameter :: NEQ=3
   real(kind=REALTYPE), parameter :: T0=0.d0, Tf=10.d0
   real(kind=REALTYPE) :: dTout, Tout, Tcur, rtol, atol, rout(6)
   integer   :: it, Nt, ier
-  integer*8 :: iout(22)
+  integer*8 :: iout(35)
   real(kind=REALTYPE), dimension(NEQ) :: y
 
   ! real/integer parameters to pass through to supplied functions
@@ -71,12 +64,12 @@ program driver
 
   ! solver parameters
   integer :: adapt_method
-  integer(kind=SUNINDEXTYPE) :: order
+  integer*8 :: order
   real(kind=REALTYPE) :: nlscoef, adapt_params
 
   !-----------------------
   ! set some solver parameters
-  order = 3          ! 4th order method
+  order = 3          ! 3rd order method
   adapt_method = 0   ! PID-controller
   nlscoef = 1.d-2    ! Newton solver tolerance coefficient
 
@@ -133,14 +126,14 @@ program driver
      stop
   endif
 
-  ! attach matrix and linear solver modules to ARKDls interface
-  call FARKDlsInit(ier)
+  ! attach matrix and linear solver modules to ARKLs interface
+  call FARKLsInit(ier)
   if (ier < 0) then
-     write(0,*) 'Error in FARKDlsInit = ',ier
+     write(0,*) 'Error in FARKLsInit = ',ier
      stop
   endif
-
-  ! notify ARKDls module of user-supplied Jacobian construction routine
+  
+  ! notify ARKLs module of user-supplied Jacobian construction routine
   call FARKDenseSetJac(1, ier)
   if (ier < 0) then
      write(0,*) 'Error in FARKDenseSetJac = ',ier
@@ -286,7 +279,7 @@ subroutine farkdjac(neq,t,y,fy,DJac,h,ipar,rpar,wk1,wk2,wk3,ier)
   ! Arguments
   real(kind=REALTYPE), intent(in) :: t, h, rpar(3)
   integer*8, intent(in) :: ipar(1)
-  integer(kind=SUNINDEXTYPE), intent(in) :: neq
+  integer*8, intent(in) :: neq
   integer,   intent(out) :: ier
   real(kind=REALTYPE), intent(in), dimension(neq) :: y, fy, wk1, wk2, wk3
   real(kind=REALTYPE), intent(out) :: DJac(neq,neq)

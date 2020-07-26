@@ -1,6 +1,16 @@
 /* -----------------------------------------------------------------
  * Programmer: Radu Serban and Cosmin Petra @ LLNL
  * -----------------------------------------------------------------
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2020, Lawrence Livermore National Security
+ * and Southern Methodist University.
+ * All rights reserved.
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
+ * -----------------------------------------------------------------
  * Simulation of a slider-crank mechanism modelled with 3 generalized
  * coordinates: crank angle, connecting bar angle, and slider location.
  * The mechanism moves under the action of a constant horizontal force
@@ -11,10 +21,10 @@
  * index-2 DAEs (Gear-Gupta-Leimkuhler formulation).
  *
  * IDAS also computes the average kinetic energy as the quadrature:
- *   G = int_t0^tend g(t,y,p) dt, 
+ *   G = int_t0^tend g(t,y,p) dt,
  * where
  *   g(t,y,p) = 0.5*J1*v1^2 + 0.5*J2*v3^2 + 0.5*m2*v2^2
- *              
+ *
  * -----------------------------------------------------------------
  */
 
@@ -26,9 +36,7 @@
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
-#include <idas/idas_direct.h>          /* access to IDADls interface           */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
-#include <sundials/sundials_math.h>    /* defs. of SUNRabs, SUNRexp, etc.      */
 
 #define Ith(v,i)    NV_Ith_S(v,i-1)       /* i-th vector component i= 1..NEQ */
 
@@ -62,7 +70,7 @@ typedef struct {
   realtype F;
 } *UserData;
 
-static int ressc(realtype tres, N_Vector yy, N_Vector yp, 
+static int ressc(realtype tres, N_Vector yy, N_Vector yp,
            N_Vector resval, void *user_data);
 static int rhsQ(realtype t, N_Vector yy, N_Vector yp, N_Vector qdot, void *user_data);
 
@@ -72,8 +80,8 @@ static void force(N_Vector yy, realtype *Q, UserData data);
 /* Prototypes of private functions */
 static void PrintHeader(realtype rtol, realtype avtol, N_Vector y);
 static void PrintOutput(void *mem, realtype t, N_Vector y);
-static void PrintFinalStats(void *mem);
-static int check_flag(void *flagvalue, const char *funcname, int opt);
+static int PrintFinalStats(void *mem);
+static int check_retval(void *returnvalue, const char *funcname, int opt);
 
 /*
  *--------------------------------------------------------------------
@@ -88,7 +96,7 @@ int main(void)
   void *mem;
   N_Vector yy, yp, id, q;
   realtype tret, tout;
-  int flag;
+  int retval;
   SUNMatrix A;
   SUNLinearSolver LS;
 
@@ -117,35 +125,35 @@ int main(void)
   NV_Ith_S(id, 8) = ZERO;
   NV_Ith_S(id, 7) = ZERO;
   NV_Ith_S(id, 6) = ZERO;
-  
+
   /* Consistent IC*/
   setIC(yy, yp, data);
 
   /* IDAS initialization */
   mem = IDACreate();
-  flag = IDAInit(mem, ressc, TBEGIN, yy, yp);
-  flag = IDASStolerances(mem, RTOLF, ATOLF);
-  flag = IDASetUserData(mem, data);
-  flag = IDASetId(mem, id);
-  flag = IDASetSuppressAlg(mem, SUNTRUE);
-  flag = IDASetMaxNumSteps(mem, 20000);
+  retval = IDAInit(mem, ressc, TBEGIN, yy, yp);
+  retval = IDASStolerances(mem, RTOLF, ATOLF);
+  retval = IDASetUserData(mem, data);
+  retval = IDASetId(mem, id);
+  retval = IDASetSuppressAlg(mem, SUNTRUE);
+  retval = IDASetMaxNumSteps(mem, 20000);
 
   /* Create dense SUNMatrix for use in linear solves */
   A = SUNDenseMatrix(NEQ, NEQ);
-  if(check_flag((void *)A, "SUNDenseMatrix", 0)) return(1);
+  if(check_retval((void *)A, "SUNDenseMatrix", 0)) return(1);
 
   /* Create dense SUNLinearSolver object */
-  LS = SUNDenseLinearSolver(yy, A);
-  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+  LS = SUNLinSol_Dense(yy, A);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) return(1);
 
   /* Attach the matrix and linear solver */
-  flag = IDADlsSetLinearSolver(mem, LS, A);
-  if(check_flag(&flag, "IDADlsSetLinearSolver", 1)) return(1);
+  retval = IDASetLinearSolver(mem, LS, A);
+  if(check_retval(&retval, "IDASetLinearSolver", 1)) return(1);
 
   N_VConst(ZERO, q);
-  flag = IDAQuadInit(mem, rhsQ, q);
-  flag = IDAQuadSStolerances(mem, RTOLQ, ATOLQ);
-  flag = IDASetQuadErrCon(mem, SUNTRUE);
+  retval = IDAQuadInit(mem, rhsQ, q);
+  retval = IDAQuadSStolerances(mem, RTOLQ, ATOLQ);
+  retval = IDASetQuadErrCon(mem, SUNTRUE);
 
   PrintHeader(RTOLF, ATOLF, yy);
 
@@ -157,17 +165,18 @@ int main(void)
 
   while (1) {
 
-    flag = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
-    if (check_flag(&flag, "IDASolve", 1)) return(1);
+    retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
+    if (check_retval(&retval, "IDASolve", 1)) return(1);
 
     PrintOutput(mem,tret,yy);
 
     tout += TEND/NOUT;
-    
+
     if (tret > TEND) break;
   }
 
-  PrintFinalStats(mem);
+  retval = PrintFinalStats(mem);
+  if (check_retval(&retval, "PrintFinalStats", 1)) return(1);
 
   IDAGetQuad(mem, &tret, q);
   printf("--------------------------------------------\n");
@@ -175,9 +184,9 @@ int main(void)
   printf("  G = %24.16Lf\n", Ith(q,1));
 #else
   printf("  G = %24.16f\n", Ith(q,1));
-#endif  
+#endif
   printf("--------------------------------------------\n\n");
-  
+
   IDAFree(&mem);
 
   /* Free memory */
@@ -186,11 +195,11 @@ int main(void)
   SUNLinSolFree(LS);
   SUNMatDestroy(A);
   N_VDestroy(id);
-  N_VDestroy_Serial(yy);
-  N_VDestroy_Serial(yp);
-  N_VDestroy_Serial(q);
+  N_VDestroy(yy);
+  N_VDestroy(yp);
+  N_VDestroy(q);
 
-  return(0);  
+  return(0);
 }
 
 static void setIC(N_Vector yy, N_Vector yp, UserData data)
@@ -209,7 +218,7 @@ static void setIC(N_Vector yy, N_Vector yp, UserData data)
   J1 = data->J1;
   m2 = data->m2;
   J2 = data->J2;
-  
+
   q = pi/TWO;
   p = asin(-a);
   x = cos(p);
@@ -217,7 +226,7 @@ static void setIC(N_Vector yy, N_Vector yp, UserData data)
   NV_Ith_S(yy,0) = q;
   NV_Ith_S(yy,1) = x;
   NV_Ith_S(yy,2) = p;
-  
+
   force(yy, Q, data);
 
   NV_Ith_S(yp,3) = Q[0]/J1;
@@ -230,7 +239,7 @@ static void force(N_Vector yy, realtype *Q, UserData data)
 {
   realtype a, k, c, l0, F;
   realtype q, x, p;
-  realtype qd, xd, pd;  
+  realtype qd, xd, pd;
   realtype s1, c1, s2, c2, s21, c21;
   realtype l2, l, ld;
   realtype f, fl;
@@ -257,7 +266,7 @@ static void force(N_Vector yy, realtype *Q, UserData data)
   c21 = c2*c1 + s2*s1;
 
   l2 = x*x - x*(c2+a*c1) + (ONE + a*a)/FOUR + a*c21/TWO;
-  l = SUNRsqrt(l2);
+  l = sqrt(l2);
   ld = TWO*x*xd - xd*(c2+a*c1) + x*(s2*pd+a*s1*qd) - a*s21*(pd-qd)/TWO;
   ld /= TWO*l;
 
@@ -277,7 +286,7 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
   realtype a, J1, m2, J2;
   realtype *yval, *ypval, *rval;
   realtype q, x, p;
-  realtype qd, xd, pd;  
+  realtype qd, xd, pd;
   realtype lam1, lam2, mu1, mu2;
   realtype s1, c1, s2, c2;
 
@@ -315,11 +324,11 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
 
   rval[0] = ypval[0] - qd + a*s1*mu1 - a*c1*mu2;
   rval[1] = ypval[1] - xd + mu1;
-  rval[2] = ypval[2] - pd + s2*mu1 - c2*mu2; 
+  rval[2] = ypval[2] - pd + s2*mu1 - c2*mu2;
 
   rval[3] = J1*ypval[3] - Q[0] + a*s1*lam1 - a*c1*lam2;
   rval[4] = m2*ypval[4] - Q[1] + lam1;
-  rval[5] = J2*ypval[5] - Q[2] + s2*lam1 - c2*lam2; 
+  rval[5] = J2*ypval[5] - Q[2] + s2*lam1 - c2*lam2;
 
   rval[6] = x - c2 - a*c1;
   rval[7] = -s2 - a*s1;
@@ -333,18 +342,16 @@ static int ressc(realtype tres, N_Vector yy, N_Vector yp, N_Vector rr, void *use
 static int rhsQ(realtype t, N_Vector yy, N_Vector yp, N_Vector qdot, void *user_data)
 {
   realtype v1, v2, v3;
-  realtype m1, J1, m2, J2, a;
+  realtype J1, m2, J2;
   UserData data;
-  
+
   data = (UserData) user_data;
   J1 = data->J1;
-  m1 = data->m1;
   m2 = data->m2;
   J2 = data->J2;
-  a  = data->a;
 
-  v1 = Ith(yy,4); 
-  v2 = Ith(yy,5); 
+  v1 = Ith(yy,4);
+  v2 = Ith(yy,5);
   v3 = Ith(yy,6);
 
   Ith(qdot,1) = HALF*(J1*v1*v1 + m2*v2*v2 + J2*v3*v3);
@@ -379,39 +386,39 @@ static void PrintOutput(void *mem, realtype t, N_Vector y)
   long int nst;
   realtype hused;
 
-  yval  = N_VGetArrayPointer_Serial(y);
+  yval  = N_VGetArrayPointer(y);
 
   retval = IDAGetLastOrder(mem, &kused);
-  check_flag(&retval, "IDAGetLastOrder", 1);
+  check_retval(&retval, "IDAGetLastOrder", 1);
   retval = IDAGetNumSteps(mem, &nst);
-  check_flag(&retval, "IDAGetNumSteps", 1);
+  check_retval(&retval, "IDAGetNumSteps", 1);
   retval = IDAGetLastStep(mem, &hused);
-  check_flag(&retval, "IDAGetLastStep", 1);
+  check_retval(&retval, "IDAGetLastStep", 1);
 #if defined(SUNDIALS_EXTENDED_PRECISION)
-  printf("%5.2Lf %12.4Le %12.4Le %12.4Le | %3ld  %1d %12.4Le\n", 
+  printf("%5.2Lf %12.4Le %12.4Le %12.4Le | %3ld  %1d %12.4Le\n",
          t, yval[0], yval[1], yval[2], nst, kused, hused);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
-  printf("%5.2f %12.4e %12.4e %12.4e | %3ld  %1d %12.4e\n", 
+  printf("%5.2f %12.4e %12.4e %12.4e | %3ld  %1d %12.4e\n",
          t, yval[0], yval[1], yval[2], nst, kused, hused);
 #else
-  printf("%5.2f %12.4e %12.4e %12.4e | %3ld  %1d %12.4e\n", 
+  printf("%5.2f %12.4e %12.4e %12.4e | %3ld  %1d %12.4e\n",
          t, yval[0], yval[1], yval[2], nst, kused, hused);
 #endif
 }
 
 
-static void PrintFinalStats(void *mem)
+static int PrintFinalStats(void *mem)
 {
-  int flag;
+  int retval;
   long int nst, nni, nje, nre, nreLS, netf, ncfn;
 
-  flag = IDAGetNumSteps(mem, &nst);
-  flag = IDAGetNumResEvals(mem, &nre);
-  flag = IDADlsGetNumJacEvals(mem, &nje);
-  flag = IDAGetNumNonlinSolvIters(mem, &nni);
-  flag = IDAGetNumErrTestFails(mem, &netf);
-  flag = IDAGetNumNonlinSolvConvFails(mem, &ncfn);
-  flag = IDADlsGetNumResEvals(mem, &nreLS);
+  retval = IDAGetNumSteps(mem, &nst);
+  retval = IDAGetNumResEvals(mem, &nre);
+  retval = IDAGetNumJacEvals(mem, &nje);
+  retval = IDAGetNumNonlinSolvIters(mem, &nni);
+  retval = IDAGetNumErrTestFails(mem, &netf);
+  retval = IDAGetNumNonlinSolvConvFails(mem, &ncfn);
+  retval = IDAGetNumLinResEvals(mem, &nreLS);
 
   printf("\nFinal Run Statistics: \n\n");
   printf("Number of steps                    = %ld\n", nst);
@@ -420,40 +427,42 @@ static void PrintFinalStats(void *mem)
   printf("Number of nonlinear iterations     = %ld\n", nni);
   printf("Number of error test failures      = %ld\n", netf);
   printf("Number of nonlinear conv. failures = %ld\n", ncfn);
+
+  return(retval);
 }
 
 /*
  * Check function return value...
  *   opt == 0 means SUNDIALS function allocates memory so check if
  *            returned NULL pointer
- *   opt == 1 means SUNDIALS function returns a flag so check if
- *            flag >= 0
+ *   opt == 1 means SUNDIALS function returns an integer value so check if
+ *            retval < 0
  *   opt == 2 means function allocates memory so check if returned
- *            NULL pointer 
+ *            NULL pointer
  */
 
-static int check_flag(void *flagvalue, const char *funcname, int opt)
+static int check_retval(void *returnvalue, const char *funcname, int opt)
 {
-  int *errflag;
+  int *retval;
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-  if (opt == 0 && flagvalue == NULL) {
-    fprintf(stderr, 
-            "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n", 
+  if (opt == 0 && returnvalue == NULL) {
+    fprintf(stderr,
+            "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
             funcname);
     return(1);
   } else if (opt == 1) {
-    /* Check if flag < 0 */
-    errflag = (int *) flagvalue;
-    if (*errflag < 0) {
-      fprintf(stderr, 
-              "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n", 
-              funcname, *errflag);
-      return(1); 
+    /* Check if retval < 0 */
+    retval = (int *) returnvalue;
+    if (*retval < 0) {
+      fprintf(stderr,
+              "\nSUNDIALS_ERROR: %s() failed with retval = %d\n\n",
+              funcname, *retval);
+      return(1);
     }
-  } else if (opt == 2 && flagvalue == NULL) {
+  } else if (opt == 2 && returnvalue == NULL) {
     /* Check if function returned NULL pointer - no memory allocated */
-    fprintf(stderr, 
-            "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n", 
+    fprintf(stderr,
+            "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
             funcname);
     return(1);
   }
