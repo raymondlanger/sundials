@@ -132,7 +132,7 @@ if(BUILD_STATIC_LIBS)
 
   target_include_directories(sundials_cvode_static 
     PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/sundials>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
     $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/src/sundials>
     $<INSTALL_INTERFACE:include> 
     PRIVATE 
@@ -141,6 +141,8 @@ if(BUILD_STATIC_LIBS)
   # Set the library name and make sure it is not deleted
   set_target_properties(sundials_cvode_static
     PROPERTIES OUTPUT_NAME sundials_cvode CLEAN_DIRECT_OUTPUT 1)
+
+  add_library(sundials::sundials_cvode_static ALIAS sundials_cvode_static)
 
   # Install the CVODE library
   install(TARGETS sundials_cvode_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -160,9 +162,10 @@ if(BUILD_SHARED_LIBS)
     ${sunmatrix_SOURCES} ${sunlinsol_SOURCES}
     ${sunnonlinsol_SOURCES}
   )
+
   target_include_directories(sundials_cvode_shared 
     PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/sundials/include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
     $<BUILD_INTERFACE:${sundials_SOURCE_DIR}/src/sundials>
     $<INSTALL_INTERFACE:include> 
     PRIVATE 
@@ -195,6 +198,8 @@ if(BUILD_SHARED_LIBS)
   # Set VERSION and SOVERSION for shared libraries
   set_target_properties(sundials_cvode_shared
     PROPERTIES VERSION ${cvodelib_VERSION} SOVERSION ${cvodelib_SOVERSION})
+
+  add_library(sundials::sundials_cvode_shared ALIAS sundials_cvode_shared)
 
   # Install the CVODE library
   install(TARGETS sundials_cvode_shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
