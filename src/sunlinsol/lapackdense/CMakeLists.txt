@@ -61,6 +61,8 @@ if(BUILD_STATIC_LIBS)
   target_compile_definitions(sundials_sunlinsollapackdense_static
     PUBLIC -DBUILD_SUNDIALS_LIBRARY)
 
+  add_library(sundials::sundials_sunlinsollapackdense_static ALIAS sundials_sunlinsollapackdense_static)
+
   install(TARGETS sundials_sunlinsollapackdense_static
     DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
@@ -103,6 +105,7 @@ if(BUILD_SHARED_LIBS)
   target_compile_definitions(sundials_sunlinsollapackdense_shared
     PUBLIC -DBUILD_SUNDIALS_LIBRARY)
 
+  add_library(sundials::sundials_sunlinsollapackdense_shared ALIAS sundials_sunlinsollapackdense_shared)
   install(TARGETS sundials_sunlinsollapackdense_shared
     DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
