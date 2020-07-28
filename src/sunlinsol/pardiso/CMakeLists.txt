@@ -13,7 +13,8 @@ SET(sunlinsolpardiso_SOURCES sunlinsol_pardiso.c)
 # Add variable shared_SOURCES with the common SUNDIALS sources which will
 # also be included in the SUNLINSOLPARDISO library
 SET(shared_SOURCES
-  ${sundials_SOURCE_DIR}/src/sundials/sundials_linearsolver.c
+	#${sundials_SOURCE_DIR}/src/sundials/sundials_linearsolver.c
+	""
   )
 
 # Add variable sunlinsolpardiso_HEADERS with the exported SUNLINSOLPARDISO header files
@@ -26,7 +27,7 @@ SET(sunlinsolpardiso_HEADERS
 #  - Set the library name and make sure it is not deleted
 #  - Install the SUNLINSOLPARDISO library
 IF(BUILD_STATIC_LIBS)
-  ADD_LIBRARY(sundials_sunlinsolpardiso_static STATIC ${sunlinsolpardiso_HEADERS} ${sunlinsolpardiso_SOURCES} ${shared_SOURCES})
+  ADD_LIBRARY(sundials_sunlinsolpardiso_static STATIC ${sunlinsolpardiso_HEADERS} ${sunlinsolpardiso_SOURCES} ${shared_SOURCES} $<TARGET_OBJECTS:sundials_generic_static_obj>)
   target_link_libraries(sundials_sunlinsolpardiso_static PUBLIC PARDISO::PARDISO_C)
   target_include_directories(sundials_sunlinsolpardiso_static 
     PUBLIC
@@ -45,7 +46,7 @@ ENDIF(BUILD_STATIC_LIBS)
 #  - Set VERSION and SOVERSION for shared libraries
 #  - Install the SUNLINSOLPARDISO library
 IF(BUILD_SHARED_LIBS)
-  ADD_LIBRARY(sundials_sunlinsolpardiso_shared SHARED ${sunlinsolpardiso_HEADERS} ${sunlinsolpardiso_SOURCES} ${shared_SOURCES})
+  ADD_LIBRARY(sundials_sunlinsolpardiso_shared SHARED ${sunlinsolpardiso_HEADERS} ${sunlinsolpardiso_SOURCES} ${shared_SOURCES} $<TARGET_OBJECTS:sundials_generic_shared_obj>)
   target_link_libraries(sundials_sunlinsolpardiso_shared PUBLIC PARDISO::PARDISO_C sundials_sunmatrixsparse_shared)
   target_include_directories(sundials_sunlinsolpardiso_shared 
     PUBLIC
