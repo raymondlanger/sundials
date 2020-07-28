@@ -332,7 +332,10 @@ endif(UNIX)
 # ---------------------------------------------------------------
 # Check for POSIX timers
 # ---------------------------------------------------------------
-include(SundialsPOSIXTimers)
+option(POSIX_TIMER "Try to use POSIX Timers." ON)
+if(POSIX_TIMER)
+  include(SundialsPOSIXTimers)
+endif()
 
 # ===============================================================
 # Options for languages and parallelism
