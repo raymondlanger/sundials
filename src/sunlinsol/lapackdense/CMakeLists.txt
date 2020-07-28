@@ -111,6 +111,12 @@ if(BUILD_SHARED_LIBS)
 
 endif(BUILD_SHARED_LIBS)
 
+if(BUILD_SHARED_LIBS)
+  add_library(sundials::sundials_sunlinsollapackdense ALIAS sundials_sunlinsollapackdense_shared)
+else()
+  add_library(sundials::sundials_sunlinsollapackdense ALIAS sundials_sunlinsollapackdense_static)
+endif()
+
 # Install the header files
 install(FILES ${sunlinsollapackdense_HEADERS} DESTINATION include/sunlinsol)
 

@@ -210,6 +210,12 @@ if(BUILD_SHARED_LIBS)
 
 endif(BUILD_SHARED_LIBS)
 
+if(BUILD_SHARED_LIBS)
+  add_library(sundials::sundials_cvode ALIAS sundials_cvode_shared)
+else()
+  add_library(sundials::sundials_cvode ALIAS sundials_cvode_static)
+endif()
+
 # Install the CVODE header files
 install(FILES ${cvode_HEADERS} DESTINATION include/cvode)
 

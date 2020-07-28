@@ -64,6 +64,12 @@ IF(BUILD_SHARED_LIBS)
   INSTALL(TARGETS sundials_sunlinsolpardiso_shared DESTINATION lib)
 ENDIF(BUILD_SHARED_LIBS)
 
+if(BUILD_SHARED_LIBS)
+  add_library(sundials::sundials_sunlinsolpardiso ALIAS sundials_sunlinsolpardiso_shared)
+else()
+  add_library(sundials::sundials_sunlinsolpardiso ALIAS sundials_sunlinsolpardiso_static)
+endif()
+
 # Install the SUNLINSOLPARDISO header files
 INSTALL(FILES ${sunlinsolpardiso_HEADERS} DESTINATION include/sunlinsol)
 
