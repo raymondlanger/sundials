@@ -16,6 +16,7 @@ interface, in addition to implementation of all linear solver
 operations defined by the generic SUNLINSOL module in the table 
 of operations.
 
+THE FORTRAN interface IMPLEMENTATION is incomplete and DOES NOT WORK!
 
 A. Documentation
 ----------------
