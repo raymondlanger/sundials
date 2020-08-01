@@ -19,13 +19,14 @@ The ReInit and Space methods are dummy implementation.
 A. Documentation
 ----------------
 
-The UMFPACK SUNLinSol implementation is not described anywhere. 
-
+The UMFPACK SUNLinSol implementation is not described anywhere. Use the 
+the CMake option UMFPACK_ENABLE=ON to install the sundials linear 
+solver interface for umfpack. 
 
 B. Installation
 ---------------
 
-Installation instructions do not exist.
+Installation instructions do not exist. 
 
 
 D. Releases

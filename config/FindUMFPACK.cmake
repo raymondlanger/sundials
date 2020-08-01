@@ -1,17 +1,34 @@
 # Mostly copied from
 # https://cmake-basis.github.io/apidoc/latest/FindUMFPACK_8cmake_source.html
  
- if (UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARIES)
-   set(UMFPACK_FIND_QUIETLY TRUE)
- endif ()
- 
+if(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARIES)
+  set(UMFPACK_FIND_QUIETLY TRUE)
+endif()
+
+if(DEFINED UMFPACKDIR)
+  if(NOT IS_DIRECTORY "${UMFPACKDIR}")
+    message(FATAL_ERROR "UMFPACK directory does not exist: \"${UMFPACKDIR}\"")
+  else()
+    message(STATUS "Preferred umfpack location: \"${UMFPACKDIR}\"")
+  endif()
+  if(NOT IS_DIRECTORY "${UMFPACKDIR}/include")
+    message(FATAL_ERROR "UMFPACK directory does not exist: \"${UMFPACKDIR}/include\"")
+  endif()
+  if(NOT IS_DIRECTORY "${UMFPACKDIR}/lib")
+    message(FATAL_ERROR "UMFPACK directory does not exist: \"${UMFPACKDIR}/lib\"")
+  endif()
+else()
+  message(STATUS "Use -DUMFPACKDIR=/Some/Dir to specify an umfpack location")
+endif()
+
  find_path(UMFPACK_INCLUDE_DIR
    NAMES
      umfpack.h
-   PATHS
-     ${UMFPACK_DIR}/include
+   HINTS
+     ${UMFPACKDIR}/include
      $ENV{UMFPACKDIR}/include
      ${INCLUDE_INSTALL_DIR}
+   REQUIRED
    PATH_SUFFIXES
      suitesparse
      ufsparse
@@ -19,8 +36,9 @@
  
  find_library(UMFPACK_LIBRARIES
    NAMES umfpack
-   PATHS
-     ${UMFPACK_DIR}/lib
+   REQUIRED
+   HINTS
+     ${UMFPACKDIR}/lib
      $ENV{UMFPACKDIR}/lib
      ${LIB_INSTALL_DIR}
  )
@@ -34,17 +52,17 @@
    get_filename_component(UMFPACK_NAME ${UMFPACK_LIBRARIES} NAME)
    message(STATUS "umfpack name: ${UMFPACK_NAME}")
  
-   find_library(COLAMD_LIBRARY colamd PATHS ${UMFPACK_LIBDIR} $ENV{UMFPACKDIR}/lib ${LIB_INSTALL_DIR})
+   find_library(COLAMD_LIBRARY colamd HINTS ${UMFPACK_LIBDIR} $ENV{UMFPACKDIR}/lib ${LIB_INSTALL_DIR})
    if (COLAMD_LIBRARY)
      set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${COLAMD_LIBRARY})
    endif (COLAMD_LIBRARY)
    
-   find_library(AMD_LIBRARY amd PATHS ${UMFPACK_LIBDIR} $ENV{UMFPACKDIR}/lib ${LIB_INSTALL_DIR})
+   find_library(AMD_LIBRARY amd HINTS ${UMFPACK_LIBDIR} $ENV{UMFPACKDIR}/lib ${LIB_INSTALL_DIR})
    if (AMD_LIBRARY)
      set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${AMD_LIBRARY})
    endif (AMD_LIBRARY)
  
-   find_library(SUITESPARSE_LIBRARY SuiteSparse PATHS ${UMFPACK_LIBDIR} $ENV{UMFPACKDIR}/lib ${LIB_INSTALL_DIR})
+   find_library(SUITESPARSE_LIBRARY SuiteSparse HINTS ${UMFPACK_LIBDIR} $ENV{UMFPACKDIR}/lib ${LIB_INSTALL_DIR})
    if (SUITESPARSE_LIBRARY)
      set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${SUITESPARSE_LIBRARY})
    endif (SUITESPARSE_LIBRARY)

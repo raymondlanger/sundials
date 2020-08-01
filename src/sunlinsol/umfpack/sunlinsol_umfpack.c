@@ -256,7 +256,7 @@ int SUNLinSolInitialize_UMFPACK(SUNLinearSolver S) {
 
 int SUNLinSolSetup_UMFPACK(SUNLinearSolver S, SUNMatrix A) {
   int retval;
-  realtype uround_twothirds = SUNRpowerR(UNIT_ROUNDOFF, TWOTHIRDS);
+  // realtype uround_twothirds = SUNRpowerR(UNIT_ROUNDOFF, TWOTHIRDS);
 
   /* Ensure that A is a sparse matrix */
   if (SUNMatGetID(A) != SUNMATRIX_SPARSE) {
