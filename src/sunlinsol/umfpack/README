@@ -1,0 +1,35 @@
+                     SUNLinSol_UMFPACK
+                 not released as part of SUNDIALS
+    SUite of Nonlinear and DIfferential/ALgebraic equation Solvers
+                   Release 5.3.0, July 2020
+
+
+UMFPACK implementation of the SUNLinSol module for SUNDIALS. 
+
+SUNLinSol_UMFPACK defines N macros to provide access to the content of 
+a UMFPACK SUNLinearSolver, and constructor for the UMFPACK SUNLinearSolver
+interface, in addition to implementation of all linear solver
+operations defined by the generic SUNLinSol module in the table 
+of operations.
+
+There is no FORTRAN interface implementation!
+
+The ReInit and Space methods are dummy implementation.
+
+A. Documentation
+----------------
+
+The UMFPACK SUNLinSol implementation is not described anywhere. 
+
+
+B. Installation
+---------------
+
+Installation instructions do not exist.
+
+
+D. Releases
+-----------
+v. 1.0   - 08/31/2020
+
+

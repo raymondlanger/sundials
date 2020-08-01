@@ -33,6 +33,10 @@ if(PARDISO_ENABLE AND PARDISO_FOUND)
   add_subdirectory(pardiso)
 endif(PARDISO_ENABLE AND PARDISO_FOUND)
 
+if(UMFPACK_ENABLE AND UMFPACK_FOUND)
+  add_subdirectory(umfpack)
+endif(UMFPACK_ENABLE AND UMFPACK_FOUND)
+
 if(SUNDIALS_SUPERLUDIST)
   add_subdirectory(superludist)
 endif()
