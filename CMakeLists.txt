@@ -148,11 +148,11 @@ else()
 endif()
 
 # CPODES is always OFF for now.  (commented out for Release); ToDo: better way to do this?
-#IF(IS_DIRECTORY "${sundials_SOURCE_DIR}/src/cpodes")
+#if(IS_DIRECTORY "${sundials_SOURCE_DIR}/src/cpodes")
 #  OPTION(BUILD_CPODES  "Build the CPODES library"  OFF)
 #ELSE()
-#  SET(BUILD_CPODES OFF)
-#ENDIF()
+#  set(BUILD_CPODES OFF)
+#endif()
 
 # ---------------------------------------------------------------
 # MACRO definitions
@@ -403,6 +403,7 @@ if(LAPACK_ENABLE AND SUNDIALS_PRECISION MATCHES "EXTENDED")
 endif()
 
 option(PARDISO_ENABLE "Enable pardiso support" OFF)
+option(UMFPACK_ENABLE "Enable umfpack support" OFF)
 # ---------------------------------------------------------------
 # Enable SuperLU_DIST support?
 # ---------------------------------------------------------------
@@ -942,7 +943,7 @@ if(PARDISO_ENABLE)
   option(MKL_PARDISO "Using PARDISO library from intel MKL" OFF)
   if(MKL_PARDISO)
     message(STATUS "Using MKL provided PARDISO")
-    IF(BLA_VENDOR MATCHES "Intel")
+    if(BLA_VENDOR MATCHES "Intel")
       MESSAGE(STATUS "Use user-specified BLA_VENDOR=${BLA_VENDOR}")
     else()
       if(SEQ_LAPACK)
@@ -956,6 +957,19 @@ if(PARDISO_ENABLE)
   endif()
 endif(PARDISO_ENABLE)
 
+if(UMFPACK_ENABLE)
+  message(STATUS "Currently, the mkl is recommended to be used with suite sparse and therefore enforced!")
+  message(STATUS "Further information is provided here: https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/1")
+  if(BLA_VENDOR MATCHES "Intel")
+    MESSAGE(STATUS "Use user-specified BLA_VENDOR=${BLA_VENDOR}")
+  else()
+    if(SEQ_LAPACK)
+      set(BLA_VENDOR "Intel10_64lp_seq")
+    else()
+      set(BLA_VENDOR "Intel10_64lp")
+    endif()
+  endif()
+endif()
 # ===============================================================
 # Find (and test) external packages
 # ===============================================================
@@ -1053,18 +1067,27 @@ endif(KLU_ENABLE)
 # Find (and test) the PARDISO library
 # ---------------------------------------------------------------
 
-#SHOW_VARIABLE(PARDISO_LIBRARY_DIR PATH
-#  "Pardiso library directory" "${PARDISO_LIBRARY_DIR}")
 if(PARDISO_ENABLE)
   # This is different from the other linear solvers:
   # PARDISO_ENABLE=ON enforces a working pardiso library
-  INCLUDE(SundialsPARDISO)
-  IF(NOT PARDISO_FOUND)
+  include(SundialsPARDISO)
+  if(NOT PARDISO_FOUND)
     message(FATAL_ERROR "PARDISO not functional - support cannot be provided")
-  ENDIF()
+  endif()
   # sundials_config.h symbol
-  SET(SUNDIALS_PARDISO TRUE)
-ENDIF(PARDISO_ENABLE)
+  set(SUNDIALS_PARDISO TRUE)
+endif(PARDISO_ENABLE)
+
+if(UMFPACK_ENABLE)
+  # This is different from the other linear solvers:
+  # UMFPACK_ENABLE=ON enforces a working umfpack library
+  include(SundialsUMFPACK)
+  if(NOT UMFPACK_FOUND)
+    message(FATAL_ERROR "UMFPACK not functional - support cannot be provided")
+  endif()
+  # sundials_config.h symbol
+  set(SUNDIALS_UMFPACK TRUE)
+endif(UMFPACK_ENABLE)
 
 # ---------------------------------------------------------------
 # Find (and test) the hypre libraries
