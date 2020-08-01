@@ -132,22 +132,10 @@ SUNLinearSolver SUNLinSol_UMFPACK(N_Vector y, SUNMatrix A) {
 
   ERROR(S) = UMFPACK_OK;
 
-  // printf("%s\n", "Do we need to initialize umfpack in any way?");
-  // exit(9);
   umfpack_di_defaults(CONTROL(S));
   int i = 0;
   for (i = 0; i < UMFPACK_INFO; ++i)
     INFO(S)[i] = 0.0;
-
-  /* Numbers of processors, value of OMP_NUM_THREADS */
-  // char *var = getenv("OMP_NUM_THREADS");
-  // if (var != NULL) {
-  //  sscanf(var, "%d", &CONTROL(S)[2]);
-  //  printf("[UMFPACK]: Using %d threads\n", CONTROL(S)[2]);
-  //} else {
-  //  CONTROL(S)[2] = 1;
-  //  printf(
-  //      "[UMFPACK]: Environment variable OMP_NUM_THREADS not set, using 1\n");
   //}
 
   MAXFCT(S) = 1; /* Maximum number of numerical factorizations.  */
@@ -443,8 +431,10 @@ sunindextype SUNLinSolLastFlag_UMFPACK(SUNLinearSolver S) {
 int SUNLinSolSpace_UMFPACK(SUNLinearSolver S, long int *lenrwLS,
                            long int *leniwLS) {
   // code below is just copied from klu and might not be correct (rlanger
-  // 08/01/2020) printf("%s %s %d:%s()\n", "Fix this:\n", __FILE__, __LINE__,
-  // __func__); exit(99);
+  // 08/01/2020) 
+  // printf("%s %s %d:%s()\n", "Fix this:\n", __FILE__, __LINE__,
+  // __func__); 
+  // exit(99);
 
   /* since the umfpack structures are opaque objects, we
      omit those from these results */

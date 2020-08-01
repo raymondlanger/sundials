@@ -57,6 +57,11 @@ SET(CVODE_examples_PARDISO
   "cvRoberts_pardiso\;develop"
   )
 
+# Examples using UMFPACK linear solver
+SET(CVODE_examples_UMFPACK
+  "cvRoberts_umfpack\;develop"
+  )
+
 # Examples using SuperLU_MT linear solver
 set(CVODE_examples_SUPERLUMT
   "cvRoberts_sps\;\;develop"
@@ -301,6 +306,46 @@ if(PARDISO_FOUND)
 
   ENDFOREACH(example_tuple ${CVODE_examples_PARDISO})
 endif(PARDISO_FOUND)
+
+
+if(UMFPACK_FOUND)
+  # Specify libraries to link against (through the target that was used to 
+  # generate them) based on the value of the variable LINK_LIBRARY_TYPE
+  IF(LINK_LIBRARY_TYPE MATCHES "static")
+    SET(SUNLINSOL_LIB sundials::sundials_sunlinsolumfpack_static)
+  ELSE()
+    SET(SUNLINSOL_LIB sundials::sundials_sunlinsolumfpack_shared)
+  ENDIF()
+  
+  FOREACH(example_tuple ${CVODE_examples_UMFPACK})
+
+    # parse the example tuple
+    LIST(GET example_tuple 0 example)
+    LIST(GET example_tuple 1 example_type)
+
+    # example source files
+    ADD_EXECUTABLE(${example} ${example}.c)
+
+    SET_TARGET_PROPERTIES(${example} PROPERTIES FOLDER "Examples")
+
+    # add example to regression tests
+    SUNDIALS_ADD_TEST(${example} ${example}
+      ANSWER_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+      ANSWER_FILE ${example}.out
+      EXAMPLE_TYPE ${example_type})
+
+    # libraries to link against
+    TARGET_LINK_LIBRARIES(${example} PUBLIC ${SUNDIALS_LIBS} ${SUNLINSOL_LIB})
+
+    # install example source and out files
+    IF(EXAMPLES_INSTALL)
+      INSTALL(FILES ${example}.c ${example}.out
+        DESTINATION ${EXAMPLES_INSTALL_PATH}/cvode/serial)
+    ENDIF()
+
+  ENDFOREACH(example_tuple ${CVODE_examples_UMFPACK})
+endif(UMFPACK_FOUND)
+
 
 # Add the build and install targets for each SuperLU_MT example (if needed)
 if(SUPERLUMT_FOUND)
