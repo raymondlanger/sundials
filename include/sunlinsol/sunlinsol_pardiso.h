@@ -222,7 +222,7 @@ typedef struct _SUNLinearSolverContent_PARDISO *SUNLinearSolverContent_PARDISO;
 
 /*
  * -----------------------------------------------------------------
- * PART II: functions exported by sunlinsol_klu
+ * PART II: functions exported by sunlinsol_pardiso
  *
  * CONSTRUCTOR:
  *    SUNPARDISO creates and allocates memory for a PARDISO sparse-direct
