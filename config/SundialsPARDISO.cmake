@@ -44,7 +44,7 @@ file(WRITE ${PARDISOTest_DIR}/CMakeLists.txt
     "endif(COMMAND cmake_policy)\n"
     "ADD_EXECUTABLE(ltest ltest.c)\n"
     "\n"
-    "SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/config)\n"
+    "SET(CMAKE_MODULE_PATH \"${PROJECT_SOURCE_DIR}/config\")\n"
     "include(utilities)\n"
     "find_blas_lapack_mkl_preferred(\"${BLA_VENDOR}\" \"${INTEL_MKL_DIR}\" \"${SEQ_LAPACK}\" \"sundials_mkl_pardiso\")\n"
     "if(INTEL_MKL_DIR OR MKL_INCLUDE_DIR)\n"
