@@ -96,7 +96,7 @@ set(sunnonlinsollib_VERSION "2.3.0")
 set(sunnonlinsollib_SOVERSION "2")
 
 # Specify the location of additional CMAKE modules
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/config)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/config")
 
 # Get correct build paths automatically, but expose CMAKE_INSTALL_LIBDIR
 # as a regular cache variable so that a user can more easily see what
