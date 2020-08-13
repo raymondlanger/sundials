@@ -23,7 +23,9 @@ file(MAKE_DIRECTORY ${PARDISOTest_DIR})
 if(MKL_PARDISO)
 # Create a CMakeLists.txt file 
 file(WRITE ${PARDISOTest_DIR}/CMakeLists.txt
-    "cmake_minimum_required(VERSION 3.9)\n"
+    "cmake_minimum_required(VERSION 3.9)\n"  
+    "SET(ENV{CC} \"${CMAKE_C_COMPILER}\")\n"
+    "SET(ENV{LDFLAGS} \"${CMAKE_SHARED_LINKER_FLAGS}\")\n"
     "PROJECT(ltest C)\n"
     "SET(CMAKE_VERBOSE_MAKEFILE ON)\n"
     "SET(CMAKE_BUILD_TYPE \"${CMAKE_BUILD_TYPE}\")\n"
@@ -70,6 +72,8 @@ else()
 # Create a CMakeLists.txt file 
 file(WRITE ${PARDISOTest_DIR}/CMakeLists.txt
     "cmake_minimum_required(VERSION 3.9)\n"
+    "SET(ENV{CC} \"${CMAKE_C_COMPILER}\")\n"
+    "SET(ENV{LDFLAGS} \"${CMAKE_SHARED_LINKER_FLAGS}\")\n"
     "PROJECT(ltest C)\n"
     "SET(CMAKE_VERBOSE_MAKEFILE ON)\n"
     "SET(CMAKE_BUILD_TYPE \"${CMAKE_BUILD_TYPE}\")\n"
