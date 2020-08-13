@@ -138,7 +138,8 @@ int SUNLinSolInitialize_LapackBand(SUNLinearSolver S)
 int SUNLinSolSetup_LapackBand(SUNLinearSolver S, SUNMatrix A)
 {
   sunindextype n, ml, mu, ldim, ier;
-
+  
+  ier = 0;
   /* check for valid inputs */
   if ( (A == NULL) || (S == NULL) )
     return(SUNLS_MEM_NULL);
@@ -171,7 +172,8 @@ int SUNLinSolSolve_LapackBand(SUNLinearSolver S, SUNMatrix A, N_Vector x,
 {
   sunindextype n, ml, mu, ldim, one, ier;
   realtype *xdata;
-
+ 
+  ier = 0;
   /* check for valid inputs */
   if ( (A == NULL) || (S == NULL) || (x == NULL) || (b == NULL) )
     return(SUNLS_MEM_NULL);

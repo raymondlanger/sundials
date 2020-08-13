@@ -138,7 +138,8 @@ int SUNLinSolInitialize_LapackDense(SUNLinearSolver S)
 int SUNLinSolSetup_LapackDense(SUNLinearSolver S, SUNMatrix A)
 {
   sunindextype n, ier;
-
+  
+  ier = 0;
   /* check for valid inputs */
   if ( (A == NULL) || (S == NULL) )
     return(SUNLS_MEM_NULL);
@@ -167,6 +168,7 @@ int SUNLinSolSolve_LapackDense(SUNLinearSolver S, SUNMatrix A, N_Vector x,
   sunindextype n, one, ier;
   realtype *xdata;
 
+  ier = 0;
   if ( (A == NULL) || (S == NULL) || (x == NULL) || (b == NULL) )
     return(SUNLS_MEM_NULL);
 
