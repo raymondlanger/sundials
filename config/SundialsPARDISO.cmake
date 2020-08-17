@@ -48,7 +48,7 @@ file(WRITE ${PARDISOTest_DIR}/CMakeLists.txt
     "\n"
     "SET(CMAKE_MODULE_PATH \"${PROJECT_SOURCE_DIR}/config\")\n"
     "include(utilities)\n"
-    "find_blas_lapack_mkl_preferred(\"${BLA_VENDOR}\" \"${INTEL_MKL_DIR}\" \"${SEQ_LAPACK}\" \"sundials_mkl_pardiso\")\n"
+    "#find_blas_lapack_mkl_preferred(\"${BLA_VENDOR}\" \"${INTEL_MKL_DIR}\" \"${SEQ_LAPACK}\" \"sundials_mkl_pardiso\")\n"
     "if(INTEL_MKL_DIR OR MKL_INCLUDE_DIR)\n"
     "  if(EXISTS \"${MKL_INCLUDE_DIR}\")\n"
     "    target_include_directories(\n"
