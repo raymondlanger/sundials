@@ -37,11 +37,11 @@ function(find_blas_lapack_mkl_preferred MY_VENDOR MY_INTEL_MKL_DIR MY_SEQ MY_FRO
   endif(MY_INTEL_MKL_DIR)
 
   if(EXISTS "$ENV{MKLROOT}")
-    message(STATUS "environment variable MKLROOT is to find the mkl")
+    message(STATUS "environment variable MKLROOT is used to find the mkl")
     set(ENV{DYLD_LIBRARY_PATH} "$ENV{DYLD_LIBRARY_PATH}:$ENV{MKLROOT}/lib")
     set(MKL_HEADER_SEARCH_HINTS "${MKL_HEADER_SEARCH_HINTS};$ENV{MKLROOT}/include")
   elseif(EXISTS "$ENV{MKL_HOME}")
-    message(STATUS "environment variable MKL_HOME is to find the mkl")
+    message(STATUS "environment variable MKL_HOME is used to find the mkl")
     set(ENV{DYLD_LIBRARY_PATH} "$ENV{DYLD_LIBRARY_PATH}:$ENV{MKL_HOME}/lib")
     set(MKL_HEADER_SEARCH_HINTS "${MKL_HEADER_SEARCH_HINTS};$ENV{MKL_HOME}/include")
   endif()
